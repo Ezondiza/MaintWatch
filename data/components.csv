@@ -1,0 +1,9 @@
+component_code,component_name,category,criticality,inspection_interval_days,ata_chapter
+C001,Fuel Pump,Powerplant,Critical,100,28
+C002,Hydraulic Actuator,Flight Ctrl,Critical,120,27
+C003,Pitot Tube,Instruments,Routine,180,34
+C004,Brake Assembly,Landing Gear,Critical,90,32
+C005,Cabin Pressure Valve,Air Systems,Routine,150,21
+C006,Battery Pack,Electrical,Routine,180,24
+C007,Rudder Trim Motor,Flight Ctrl,Critical,120,27
+C008,Engine Fire Detector,Fire Protect,Critical,60,26
