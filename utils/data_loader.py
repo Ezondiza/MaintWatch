@@ -2,7 +2,7 @@ import pandas as pd
 
 def load_data():
     components = pd.read_csv("data/components.csv")
-    technicians = pd.read_csv("data/technicians.csv")
+    technicians = pd.read_csv("data/ames.csv")  # Updated filename
     pilots = pd.read_csv("data/pilots.csv")
     return components, technicians, pilots
 
