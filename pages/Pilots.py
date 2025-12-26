@@ -7,6 +7,12 @@ if "df" not in st.session_state:
 
 df = st.session_state["df"]
 
+required_cols = {"pilot_name", "rank", "anomaly", "experience_years"}
+missing = required_cols - set(df.columns)
+if missing:
+    st.error(f"Missing columns: {missing}")
+    st.stop()
+
 st.title("Pilot Performance")
 
 pilot_summary = df.groupby(["pilot_name", "rank"]).agg(
