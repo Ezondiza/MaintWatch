@@ -1,0 +1,9 @@
+date,aircraft_id,component,hours_since_last,technician,pilot_name,remarks
+2025-12-01,9N-AHB,Fuel Pump,110,T. Basnet,Capt. R. Thapa,Replaced due to wear
+2025-12-03,9N-AHR,Brake Assembly,95,R. Shrestha,F/O S. Rana,Uneven brake pressure
+2025-12-05,9N-AIE,Pitot Tube,200,M. Gurung,Capt. D. Lama,Blockage suspected
+2025-12-07,9N-AJH,Hydraulic Actuator,130,A. Lama,F/O B. Tamang,Slow response noted
+2025-12-09,9N-AHB,Engine Fire Detector,65,S. Karki,Capt. M. Singh,Routine inspection
+2025-12-11,9N-AHR,Cabin Pressure Valve,160,T. Basnet,F/O S. Rana,Cabin pressure fluctuation
+2025-12-13,9N-AIE,Rudder Trim Motor,140,R. Shrestha,Capt. D. Lama,Trim drift observed
+2025-12-15,9N-AJH,Battery Pack,190,M. Gurung,F/O B. Tamang,Voltage drop
