@@ -3,31 +3,50 @@
 import pandas as pd
 
 
-def calculate_mtbf_by_component(df):
-    df = df[df["removal_reason"] == "Unscheduled Failure"].copy()
+def calculate_mtbf_by_component(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+
+    df = df[df["removal_reason"] == "Unscheduled Failure"]
+    if df.empty:
+        return pd.DataFrame()
+
     df["removal_date"] = pd.to_datetime(df["removal_date"])
 
     df = df.sort_values(
-        ["component_name", "serial_number", "aircraft_reg", "removal_date"]
+        ["component_code", "serial_number", "aircraft_reg", "removal_date"]
     )
 
     df["fh_delta"] = df.groupby(
-        ["component_name", "serial_number", "aircraft_reg"]
+        ["component_code", "serial_number", "aircraft_reg"]
     )["aircraft_fh"].diff()
 
     valid = df.dropna(subset=["fh_delta"])
+    if valid.empty:
+        return pd.DataFrame()
 
-    return (
-        valid.groupby("component_name")
-        .agg(mtbf_fh=("fh_delta", "mean"), failures=("component_name", "count"))
+    mtbf = (
+        valid.groupby(
+            ["component_code", "component_name", "category", "criticality"]
+        )
+        .agg(
+            mtbf_fh=("fh_delta", "mean"),
+            failure_count=("fh_delta", "count")
+        )
         .reset_index()
-        .round(1)
     )
 
-def calculate_mtbf_by_ata(df):
-    import pandas as pd
+    mtbf["mtbf_fh"] = mtbf["mtbf_fh"].round(1)
 
-    df = df[df["removal_reason"] == "Unscheduled Failure"].copy()
+    return mtbf.sort_values("mtbf_fh", ascending=False)
+
+
+def calculate_mtbf_by_ata(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+
+    df = df[df["removal_reason"] == "Unscheduled Failure"]
+    if df.empty:
+        return pd.DataFrame()
+
     df["removal_date"] = pd.to_datetime(df["removal_date"])
 
     df = df.sort_values(
@@ -39,11 +58,18 @@ def calculate_mtbf_by_ata(df):
     )["aircraft_fh"].diff()
 
     valid = df.dropna(subset=["fh_delta"])
+    if valid.empty:
+        return pd.DataFrame()
 
-    return (
+    mtbf = (
         valid.groupby("ata_chapter")
-        .agg(mtbf_fh=("fh_delta", "mean"), failure_count=("ata_chapter", "count"))
+        .agg(
+            mtbf_fh=("fh_delta", "mean"),
+            failure_count=("fh_delta", "count")
+        )
         .reset_index()
-        .round(1)
-        .sort_values("mtbf_fh", ascending=False)
     )
+
+    mtbf["mtbf_fh"] = mtbf["mtbf_fh"].round(1)
+
+    return mtbf.sort_values("mtbf_fh", ascending=False)
