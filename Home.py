@@ -41,3 +41,9 @@ if uploaded_file:
     st.success("Historical data loaded successfully")
 else:
     st.info("No file uploaded. Use Component Removal to enter new data.")
+    from utils.migrate_removal_events import migrate_removal_events
+
+if st.sidebar.button("Migrate removal events to new schema"):
+    migrate_removal_events()
+    st.success("Migration complete. Reload MTBF Dashboard.")
+
