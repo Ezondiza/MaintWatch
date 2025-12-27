@@ -4,7 +4,7 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 
-from utils.data_loader import load_component_master
+from utils.component_master_loader import load_component_master
 from utils.csv_writer import append_removal_event
 from validation.component_rules import validate_removal_event
 from utils.defect_closer import close_defect
