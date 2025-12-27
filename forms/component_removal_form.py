@@ -1,4 +1,5 @@
-print("LOADING CLEAN COMPONENT REMOVAL FORM v2")
+raise RuntimeError("COMPONENT REMOVAL FORM SOURCE FILE LOADED")
+
 
 import streamlit as st
 from datetime import date
