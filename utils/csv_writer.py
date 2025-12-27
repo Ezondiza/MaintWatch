@@ -1,0 +1,32 @@
+import csv
+import os
+
+CSV_PATH = "data/removal_events.csv"
+
+FIELDNAMES = [
+    "aircraft_reg",
+    "component_name",
+    "part_number",
+    "serial_number",
+    "ata_chapter",
+    "removal_date",
+    "aircraft_fh",
+    "aircraft_fc",
+    "removal_reason",
+    "station",
+    "deferred_ref",
+    "work_order",
+    "technician_id",
+    "remarks"
+]
+
+def append_removal_event(record):
+    file_exists = os.path.isfile(CSV_PATH)
+
+    with open(CSV_PATH, mode="a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
+
+        if not file_exists:
+            writer.writeheader()
+
+        writer.writerow(record)
