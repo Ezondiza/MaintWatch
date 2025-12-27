@@ -1,9 +1,20 @@
-component_code,component_name,category,criticality,inspection_interval_days,ata_chapter
 C001,Fuel Pump,Powerplant,Critical,100,28
-C002,Hydraulic Actuator,Flight Ctrl,Critical,120,27
-C003,Pitot Tube,Instruments,Routine,180,34
-C004,Brake Assembly,Landing Gear,Critical,90,32
-C005,Cabin Pressure Valve,Air Systems,Routine,150,21
-C006,Battery Pack,Electrical,Routine,180,24
-C007,Rudder Trim Motor,Flight Ctrl,Critical,120,27
-C008,Engine Fire Detector,Fire Protect,Critical,60,26
+C002,Fuel Control Unit,Powerplant,Critical,120,73
+C003,Oil Pressure Pump,Powerplant,Critical,120,79
+C004,Hydraulic Actuator,Flight Controls,Critical,120,27
+C005,Rudder Trim Actuator,Flight Controls,Critical,150,27
+C006,Brake Assembly,Landing Gear,Critical,90,32
+C007,Wheel Assembly,Landing Gear,Routine,180,32
+C008,Battery Pack,Electrical,Routine,180,24
+C009,Starter Generator,Electrical,Critical,120,49
+C010,Alternator Control Unit,Electrical,Routine,180,24
+C011,Avionics Cooling Fan,Avionics,Routine,180,21
+C012,Flight Data Recorder Power Unit,Avionics,Critical,365,31
+C013,Cabin Pressure Valve,Air Systems,Routine,150,21
+C014,Bleed Air Valve,Air Systems,Critical,120,36
+C015,Pitot Pressure Probe,Instruments,Routine,180,34
+C016,Angle of Attack Sensor,Instruments,Critical,180,34
+C017,Landing Light Assembly,Lighting,Routine,180,33
+C018,Oxygen Regulator,Life Support,Critical,365,35
+C019,Fire Detection Sensor,Fire Protection,Critical,180,26
+C020,Engine Mount Assembly,Structures,Critical,365,71
