@@ -5,7 +5,7 @@ from utils.data_loader import load_data, load_maintenance, merge_data
 
 st.set_page_config(page_title="MaintWatch", layout="wide")
 
-st.title("🛠️ MaintWatch")
+st.title("🛠️ Maintenance Watch")
 st.subheader("Component Reliability and MTBF Tracking")
 
 st.markdown(
@@ -46,4 +46,7 @@ else:
 if st.sidebar.button("Migrate removal events to new schema"):
     migrate_removal_events()
     st.success("Migration complete. Reload MTBF Dashboard.")
+
+st.markdown(
+    """Developed by Ghanshyam Acharya, 2025"""
 
