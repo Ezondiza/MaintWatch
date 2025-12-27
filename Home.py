@@ -49,4 +49,5 @@ if st.sidebar.button("Migrate removal events to new schema"):
 
 st.markdown(
     """Developed by Ghanshyam Acharya, 2025"""
+)
 
