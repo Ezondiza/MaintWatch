@@ -1,10 +1,37 @@
-aircraft_reg,component_name,part_number,serial_number,ata_chapter,removal_date,aircraft_fh_at_removal,aircraft_fc_at_removal,removal_reason
-9N-AHB,Fuel Pump,FP-228-01,FP123456,28,2025-01-05,12450.3,9821,Leakage observed
-9N-AHB,Fuel Pump,FP-228-01,FP123789,28,2025-02-10,12545.7,9902,Low pressure
-9N-AHB,Fuel Pump,FP-228-01,FP124012,28,2025-03-15,12650.9,9985,Noisy operation
-9N-AHR,Brake Assembly,BA-228-03,BA456321,32,2025-01-12,11320.5,8702,Uneven braking
-9N-AHR,Brake Assembly,BA-228-03,BA456789,32,2025-04-20,11405.2,8780,Pad wear
-9N-AIE,Hydraulic Actuator,HA-228-07,HA789654,27,2025-02-18,13210.0,10210,Slow retraction
-9N-AIE,Hydraulic Actuator,HA-228-07,HA789987,27,2025-05-22,13340.8,10325,Hydraulic leak
-9N-AJH,Battery Pack,BP-228-05,BP321654,24,2025-03-01,11800.4,9050,Voltage drop
-9N-AJH,Battery Pack,BP-228-05,BP321987,24,2025-06-10,11975.6,9155,Failed to hold charge
+aircraft_reg,component_name,part_number,serial_number,ata_chapter,removal_date,aircraft_fh,aircraft_fc,removal_reason,station,deferred_ref,work_order,technician_id,remarks
+9N-AHB,Fuel Pump,FP-228-01,FP123456,28,2024-06-15,12000.0,9500,Unscheduled Failure,KTM,,WO-101,T001,Pressure drop
+9N-AHB,Fuel Pump,FP-228-01,FP123456,28,2025-03-20,12680.0,10020,Unscheduled Failure,KTM,,WO-145,T004,Internal leakage
+9N-AHB,Fuel Pump,FP-228-01,FP1001,28,2024-01-15,11800.0,9400,Unscheduled Failure,KTM,,WO-101,T001,Pressure drop
+9N-AHB,Fuel Pump,FP-228-01,FP1001,28,2024-10-20,12480.0,9920,Unscheduled Failure,KTM,,WO-145,T004,Internal leakage
+9N-AHB,Fuel Pump,FP-228-01,FP1002,28,2024-03-12,11950.4,9520,Scheduled Replacement,KTM,,WO-112,T002,Time expired
+9N-AHB,Fuel Pump,FP-228-01,FP1002,28,2025-01-18,12630.2,10080,Unscheduled Failure,KTM,,WO-178,T006,Seal failure
+
+9N-AHR,Brake Assembly,BA-228-03,BA2001,32,2024-02-05,11220.0,8650,Unscheduled Failure,PKR,,WO-201,T003,Uneven braking
+9N-AHR,Brake Assembly,BA-228-03,BA2001,32,2024-11-10,11890.5,9200,Unscheduled Failure,PKR,,WO-242,T005,Excessive vibration
+9N-AHR,Brake Assembly,BA-228-03,BA2002,32,2024-04-18,11380.2,8780,Scheduled Replacement,PKR,,WO-215,T002,Pad wear
+
+9N-AIE,Hydraulic Actuator,HA-228-07,HA3001,27,2024-01-30,13020.0,10120,Unscheduled Failure,KTM,,WO-301,T007,Slow retraction
+9N-AIE,Hydraulic Actuator,HA-228-07,HA3001,27,2024-12-12,13680.6,10690,Unscheduled Failure,KTM,,WO-346,T009,Hydraulic leak
+9N-AIE,Hydraulic Actuator,HA-228-07,HA3002,27,2024-05-22,13210.3,10340,Scheduled Replacement,KTM,,WO-322,T008,SB compliance
+
+9N-AJH,Battery Pack,BP-228-05,BP4001,24,2024-03-01,11780.0,9020,Unscheduled Failure,PKR,,WO-401,T004,Voltage drop
+9N-AJH,Battery Pack,BP-228-05,BP4001,24,2024-09-15,12390.8,9470,Unscheduled Failure,PKR,,WO-437,T006,Failed capacity test
+9N-AJH,Battery Pack,BP-228-05,BP4002,24,2024-06-10,11940.6,9180,Scheduled Replacement,PKR,,WO-419,T005,Life limit reached
+
+9N-AKB,Starter Generator,SG-228-09,SG5001,49,2024-02-14,10850.2,8450,Unscheduled Failure,KTM,,WO-501,T010,Overheating
+9N-AKB,Starter Generator,SG-228-09,SG5001,49,2024-12-05,11560.7,8990,Unscheduled Failure,KTM,,WO-548,T012,Bearing noise
+9N-AKB,Starter Generator,SG-228-09,SG5002,49,2024-07-19,11120.4,8720,Scheduled Replacement,KTM,,WO-522,T011,Inspection finding
+
+9N-AKC,Avionics Cooling Fan,ACF-228-11,ACF6001,21,2024-01-25,10420.0,8100,Unscheduled Failure,PKR,,WO-601,T013,Motor seized
+9N-AKC,Avionics Cooling Fan,ACF-228-11,ACF6001,21,2024-08-30,11080.9,8550,Unscheduled Failure,PKR,,WO-635,T014,Low airflow
+9N-AKC,Avionics Cooling Fan,ACF-228-11,ACF6002,21,2024-05-14,10670.1,8320,Scheduled Replacement,PKR,,WO-619,T013,Preventive change
+
+9N-AHD,Oxygen Regulator,OR-228-14,OR7001,35,2024-03-08,12140.0,9650,Unscheduled Failure,KTM,,WO-701,T015,Flow instability
+9N-AHD,Oxygen Regulator,OR-228-14,OR7001,35,2024-12-18,12890.3,10210,Unscheduled Failure,KTM,,WO-742,T016,Leak detected
+
+9N-AHF,Landing Light,LL-228-18,LL8001,33,2024-04-02,11620.5,9100,Scheduled Replacement,PKR,,WO-801,T017,Bulb failure
+9N-AHF,Landing Light,LL-228-18,LL8001,33,2024-10-22,12280.9,9550,Unscheduled Failure,PKR,,WO-835,T018,Intermittent operation
+
+9N-AHG,Cabin Pressure Valve,CPV-228-21,CPV9001,36,2024-02-20,12900.0,10180,Unscheduled Failure,KTM,,WO-901,T019,Pressure fluctuation
+9N-AHG,Cabin Pressure Valve,CPV-228-21,CPV9001,36,2025-01-25,13560.4,10730,Unscheduled Failure,KTM,,WO-948,T020,Erratic control
+
