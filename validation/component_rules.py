@@ -25,7 +25,7 @@ def validate_removal_event(record):
     if record.get("aircraft_fc", -1) < 0:
         errors.append("Aircraft FC must be zero or greater")
 
-    ata = record.get("ata_chapter", "")
+    ata = str(record.get("ata_chapter", ""))
     if not ata.replace("-", "").isdigit():
         errors.append("ATA chapter format is invalid")
 
