@@ -1,108 +1,188 @@
-# /pages/MTBF_Dashboard.py
+# maintwatch/pages/MTBF_Dashboard.py
 
 import streamlit as st
 import pandas as pd
 
-from utils.removal_events_loader import load_removal_events
-from utils.mtbf_calculator import calculate_mtbf_by_component, calculate_mtbf_by_ata
+from utils.mtb f_calculator import calculate_mtbf_by_component  # if your file name differs, fix import
+from utils.data_loader import load_component_master  # assumes it returns components.csv as df
 
+REMOVALS_PATH = "data/removal_events.csv"
 
 st.set_page_config(page_title="MTBF Dashboard", layout="wide")
-
 st.title("MTBF Dashboard")
-st.caption("MTBF uses unscheduled component removals only. Values are based on aircraft FH deltas between repeated removals of the same serial number.")
 
-df = load_removal_events()
+st.caption(
+    "MTBF uses unscheduled component removals only. "
+    "Values are based on aircraft FH deltas between repeated removals of the same serial number."
+)
 
-if df.empty:
-    st.info("No removal events found. Use Component Removal to enter removals.")
+def _read_removals():
+    try:
+        return pd.read_csv(REMOVALS_PATH)
+    except Exception as e:
+        st.error(f"Cannot read {REMOVALS_PATH}. Error: {e}")
+        return pd.DataFrame()
+
+def _normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+
+    df = df.copy()
+    df.columns = [c.strip() for c in df.columns]
+
+    rename_map = {
+        "aircraft_fh_at_removal": "aircraft_fh",
+        "aircraft_fc_at_removal": "aircraft_fc",
+    }
+    for a, b in rename_map.items():
+        if a in df.columns and b not in df.columns:
+            df[b] = df[a]
+
+    return df
+
+def _required_cols_present(df: pd.DataFrame, cols: list[str]) -> bool:
+    missing = [c for c in cols if c not in df.columns]
+    if missing:
+        st.error("Removal dataset is missing required columns: " + ", ".join(missing))
+        st.write("Available columns")
+        st.dataframe(pd.DataFrame({"available_columns": df.columns.tolist()}), use_container_width=True)
+        return False
+    return True
+
+rem_df = _read_removals()
+rem_df = _normalize_columns(rem_df)
+
+required = ["aircraft_reg", "component_name", "serial_number", "removal_date", "aircraft_fh", "aircraft_fc", "removal_reason"]
+if not _required_cols_present(rem_df, required):
     st.stop()
 
-required_cols = {"component_code", "component_name", "serial_number", "aircraft_reg", "removal_date", "aircraft_fh", "removal_reason"}
-missing = sorted(list(required_cols - set(df.columns)))
+# Filter for unscheduled removals for MTBF
+# Your data uses either "Unscheduled" or "Unscheduled Failure". We treat both as unscheduled.
+reason_series = rem_df["removal_reason"].astype(str).str.lower()
+unscheduled_mask = reason_series.str.contains("unscheduled") | reason_series.str.contains("failure")
+mtbf_input = rem_df[unscheduled_mask].copy()
 
-if missing:
-    st.error("Removal dataset is missing required columns: " + ", ".join(missing))
-    st.caption("Open data/removal_events.csv and confirm the header matches the current schema.")
-    st.dataframe(pd.DataFrame({"available_columns": list(df.columns)}), use_container_width=True)
+if mtbf_input.empty:
+    st.info("No unscheduled removal events found. Add unscheduled events to compute MTBF.")
     st.stop()
 
-unsched_df = df[df["removal_reason"] == "Unscheduled Failure"]
+# Ensure proper types
+mtbf_input["removal_date"] = pd.to_datetime(mtbf_input["removal_date"], errors="coerce")
+mtbf_input["aircraft_fh"] = pd.to_numeric(mtbf_input["aircraft_fh"], errors="coerce")
+mtbf_input["aircraft_fc"] = pd.to_numeric(mtbf_input["aircraft_fc"], errors="coerce")
 
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Total Records", len(df))
-col2.metric("Unscheduled Failures", len(unsched_df))
-col3.metric("Distinct Components", df["component_code"].nunique())
-col4.metric("Distinct Aircraft", df["aircraft_reg"].nunique())
+mtbf_input = mtbf_input.dropna(subset=["removal_date", "aircraft_fh", "aircraft_fc", "serial_number", "component_name", "aircraft_reg"])
 
-with st.expander("Data columns seen by the app"):
-    st.dataframe(pd.DataFrame({"columns": list(df.columns)}), use_container_width=True)
+if mtbf_input.empty:
+    st.info("After cleaning invalid rows, no usable unscheduled events remain.")
+    st.stop()
 
+# Compute MTBF
+# We compute deltas per aircraft_reg + component_name + serial_number
+df_sorted = mtbf_input.sort_values(["component_name", "serial_number", "aircraft_reg", "removal_date"]).copy()
+df_sorted["fh_delta"] = df_sorted.groupby(["component_name", "serial_number", "aircraft_reg"])["aircraft_fh"].diff()
+df_sorted["fc_delta"] = df_sorted.groupby(["component_name", "serial_number", "aircraft_reg"])["aircraft_fc"].diff()
+
+df_valid = df_sorted.dropna(subset=["fh_delta", "fc_delta"])
+df_valid = df_valid[(df_valid["fh_delta"] > 0) & (df_valid["fc_delta"] >= 0)]
+
+if df_valid.empty:
+    st.info("MTBF needs repeated removals of the same component serial number on the same aircraft. Add repeat events to see MTBF.")
+    st.stop()
+
+mtbf_comp = (
+    df_valid.groupby("component_name")
+    .agg(
+        mtbf_fh=("fh_delta", "mean"),
+        mtbf_fc=("fc_delta", "mean"),
+        failure_count=("component_name", "count"),
+    )
+    .reset_index()
+)
+
+mtbf_comp["mtbf_fh"] = mtbf_comp["mtbf_fh"].round(1)
+mtbf_comp["mtbf_fc"] = mtbf_comp["mtbf_fc"].round(1)
+mtbf_comp = mtbf_comp.sort_values("mtbf_fh", ascending=False)
+
+# Enrich with component master if available
+# We try to bring component_code and criticality
+try:
+    comp_master = load_component_master()
+    if not comp_master.empty:
+        comp_master = comp_master.copy()
+        comp_master.columns = [c.strip() for c in comp_master.columns]
+
+        # If components.csv has no header, user must fix it. Still, we try a fallback.
+        if "component_code" not in comp_master.columns and comp_master.shape[1] >= 6:
+            comp_master.columns = ["component_code", "component_name", "category", "criticality", "inspection_interval_days", "ata_chapter"]
+
+        join_cols = [c for c in ["component_name", "component_code", "criticality"] if c in comp_master.columns]
+        if "component_name" in join_cols:
+            mtbf_comp = mtbf_comp.merge(
+                comp_master[["component_name"] + [c for c in ["component_code", "criticality"] if c in comp_master.columns]].drop_duplicates(),
+                on="component_name",
+                how="left",
+            )
+except Exception:
+    pass
+
+# Guarantee required display columns exist for the forecasting hook
+for col, default in [("component_code", ""), ("criticality", "Unknown")]:
+    if col not in mtbf_comp.columns:
+        mtbf_comp[col] = default
+
+st.subheader("MTBF by Component")
+st.dataframe(
+    mtbf_comp[["component_code", "component_name", "criticality", "mtbf_fh", "mtbf_fc", "failure_count"]],
+    use_container_width=True
+)
+
+st.bar_chart(mtbf_comp.set_index("component_name")[["mtbf_fh"]])
+
+# Forecasting hook
 st.divider()
-
-left, right = st.columns(2)
-
-with left:
-    st.subheader("MTBF by Component")
-
-    mtbf_comp = calculate_mtbf_by_component(df)
-
-    if mtbf_comp.empty:
-        st.info("Not enough repeated unscheduled removals to compute MTBF yet.")
-    else:
-        show_cols = [c for c in ["component_code", "component_name", "category", "criticality", "mtbf_fh", "failure_count"] if c in mtbf_comp.columns]
-        st.dataframe(mtbf_comp[show_cols], use_container_width=True)
-
-        top_n = st.slider("Top components to chart", 5, 30, 10)
-        chart_source = mtbf_comp.head(top_n).copy()
-
-        if "component_name" in chart_source.columns and "mtbf_fh" in chart_source.columns:
-            st.bar_chart(chart_source.set_index("component_name")[["mtbf_fh"]])
-
-with right:
-    st.subheader("MTBF by ATA")
-
-    mtbf_ata = calculate_mtbf_by_ata(df)
-
-    if mtbf_ata.empty:
-        st.info("Not enough repeated unscheduled removals to compute MTBF yet.")
-    else:
-        show_cols_ata = [c for c in ["ata_chapter", "mtbf_fh", "failure_count"] if c in mtbf_ata.columns]
-        st.dataframe(mtbf_ata[show_cols_ata], use_container_width=True)
-
-        top_n_ata = st.slider("Top ATA chapters to chart", 5, 30, 10)
-        chart_ata = mtbf_ata.head(top_n_ata).copy()
-
-        if "ata_chapter" in chart_ata.columns and "mtbf_fh" in chart_ata.columns:
-            st.bar_chart(chart_ata.set_index("ata_chapter")[["mtbf_fh"]])
-
-st.divider()
-
 st.subheader("Forecasting Hook")
-st.caption("Estimate expected removals using fleet hours divided by MTBF. This is a planning number, not a prediction.")
-
-if "mtbf_comp" not in locals() or mtbf_comp.empty:
-    st.info("Forecasting requires MTBF values. Add repeated unscheduled removals for the same serial number.")
-    st.stop()
+st.caption(
+    "Simple planning estimate based on fleet hours divided by MTBF. "
+    "Use this for spares sizing and maintenance planning."
+)
 
 colf1, colf2 = st.columns(2)
-fleet_hours = colf1.number_input("Fleet hours for the forecast period", min_value=0.0, step=10.0, value=300.0)
-show_top = colf2.number_input("Show top items", min_value=5, step=5, value=15)
+fleet_hours = colf1.number_input(
+    "Fleet hours for the forecast period",
+    min_value=0.0,
+    step=10.0,
+    value=300.0
+)
+show_top = colf2.number_input(
+    "Show top items",
+    min_value=5,
+    step=5,
+    value=15
+)
 
-forecast_df = mtbf_comp.copy()
+if not mtbf_comp.empty and fleet_hours > 0:
 
-if "mtbf_fh" not in forecast_df.columns:
-    st.error("MTBF table missing mtbf_fh. Check mtbf_calculator outputs.")
-    st.dataframe(pd.DataFrame({"mtbf_columns": list(forecast_df.columns)}), use_container_width=True)
-    st.stop()
+    forecast_df = mtbf_comp.copy()
+    forecast_df = forecast_df[forecast_df["mtbf_fh"] > 0]
 
-forecast_df = forecast_df[forecast_df["mtbf_fh"] > 0].copy()
-forecast_df["expected_failures"] = (fleet_hours / forecast_df["mtbf_fh"]).round(2)
+    forecast_df["expected_failures"] = (fleet_hours / forecast_df["mtbf_fh"]).round(2)
 
-display_cols = [c for c in ["component_code", "component_name", "criticality", "mtbf_fh", "failure_count", "expected_failures"] if c in forecast_df.columns]
-out = forecast_df[display_cols].head(int(show_top))
+    out = forecast_df[
+        [
+            "component_code",
+            "component_name",
+            "criticality",
+            "mtbf_fh",
+            "failure_count",
+            "expected_failures",
+        ]
+    ].head(int(show_top))
 
-st.dataframe(out, use_container_width=True)
+    st.dataframe(out, use_container_width=True)
 
-if "component_name" in out.columns:
-    st.bar_chart(out.set_index("component_name")[["expected_failures"]])
+    chart_df = out.set_index("component_name")[["expected_failures"]]
+    st.bar_chart(chart_df)
+
+else:
+    st.info("Forecast requires MTBF data and fleet hours.")
