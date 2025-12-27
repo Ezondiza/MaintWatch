@@ -1,3 +1,5 @@
+# /utils/csv_writer.py
+
 import csv
 import os
 
@@ -20,13 +22,12 @@ FIELDNAMES = [
     "remarks"
 ]
 
+
 def append_removal_event(record):
     file_exists = os.path.isfile(CSV_PATH)
 
-    with open(CSV_PATH, mode="a", newline="", encoding="utf-8") as f:
+    with open(CSV_PATH, "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
-
         if not file_exists:
             writer.writeheader()
-
         writer.writerow(record)
