@@ -1,13 +1,15 @@
-# /forms/component_removal_form.py
-
 import streamlit as st
 from datetime import date
-from validation.component_rules import validate_removal_event
-from utils.csv_writer import append_removal_event
+
 from utils.component_master_loader import load_component_master
+from utils.defect_loader import load_open_defects
+from utils.csv_writer import append_removal_event
+from utils.defect_closer import close_defect
+from validation.component_rules import validate_removal_event
 
 
 def component_removal_form():
+
     st.subheader("Component Removal Entry")
 
     components_df = load_component_master()
@@ -17,50 +19,59 @@ def component_removal_form():
         for _, row in components_df.iterrows()
     }
 
-    with st.form("component_removal_form"):
+    with st.form("component_removal_form", clear_on_submit=True):
 
         col1, col2, col3 = st.columns(3)
-        aircraft_reg = col1.text_input("Aircraft Reg")
-        removal_date = col2.date_input("Removal Date", max_value=date.today())
+        aircraft_reg = col1.selectbox(
+            "Aircraft Registration",
+            ["", "9N-AHB", "9N-AHR", "9N-AIE", "9N-AJH"]
+        )
+        removal_date = col2.date_input(
+            "Removal Date",
+            max_value=date.today()
+        )
         station = col3.text_input("Station")
 
         component_key = st.selectbox(
             "Component",
-            options=list(component_map.keys())
+            options=[""] + list(component_map.keys())
         )
 
-        selected = component_map[component_key]
+        if component_key:
+            selected = component_map[component_key]
+        else:
+            selected = None
 
-        col4, col5, col6 = st.columns(3)
+        col4, col5, col6, col7 = st.columns(4)
+
         component_code = col4.text_input(
             "Component Code",
-            value=selected.component_code,
+            value=selected.component_code if selected else "",
             disabled=True
         )
+
         ata_chapter = col5.text_input(
             "ATA Chapter",
-            value=str(selected.ata_chapter),
+            value=str(selected.ata_chapter) if selected else "",
             disabled=True
         )
+
         category = col6.text_input(
             "Category",
-            value=selected.category,
+            value=selected.category if selected else "",
             disabled=True
         )
 
-        col7, col8, col9 = st.columns(3)
-        part_number = col7.text_input("Part Number")
-        serial_number = col8.text_input("Serial Number")
-        criticality = col9.text_input(
+        criticality = col7.text_input(
             "Criticality",
-            value=selected.criticality,
+            value=selected.criticality if selected else "",
             disabled=True
         )
 
-        col10, col11, col12 = st.columns(3)
-        aircraft_fh = col10.number_input("Aircraft FH", min_value=0.0, step=0.1)
-        aircraft_fc = col11.number_input("Aircraft FC", min_value=0, step=1)
-        removal_reason = col12.selectbox(
+        col8, col9, col10 = st.columns(3)
+        part_number = col8.text_input("Part Number")
+        serial_number = col9.text_input("Serial Number")
+        removal_reason = col10.selectbox(
             "Removal Reason",
             [
                 "Unscheduled Failure",
@@ -71,25 +82,54 @@ def component_removal_form():
             ]
         )
 
+        col11, col12 = st.columns(2)
+        aircraft_fh = col11.number_input(
+            "Aircraft FH",
+            min_value=0.0,
+            step=0.1
+        )
+        aircraft_fc = col12.number_input(
+            "Aircraft FC",
+            min_value=0,
+            step=1
+        )
+
+        deferred_ref = ""
+
+        if aircraft_reg:
+            open_defects = load_open_defects(aircraft_reg)
+
+            if not open_defects.empty:
+                defect_labels = [""] + open_defects["label"].tolist()
+                selected_defect = st.selectbox(
+                    "Deferred Defect Reference (optional)",
+                    defect_labels
+                )
+
+                if selected_defect:
+                    deferred_ref = selected_defect.split(" | ")[0]
+
         remarks = st.text_area("Remarks", height=80)
 
         submitted = st.form_submit_button("Save Removal Event")
 
     if submitted:
+
         record = {
-            "aircraft_reg": aircraft_reg.strip(),
+            "aircraft_reg": aircraft_reg,
             "component_code": component_code,
-            "component_name": selected.component_name,
+            "component_name": selected.component_name if selected else "",
             "part_number": part_number.strip(),
             "serial_number": serial_number.strip(),
-            "ata_chapter": selected.ata_chapter,
-            "category": selected.category,
-            "criticality": selected.criticality,
+            "ata_chapter": selected.ata_chapter if selected else "",
+            "category": selected.category if selected else "",
+            "criticality": selected.criticality if selected else "",
             "removal_date": str(removal_date),
             "aircraft_fh": aircraft_fh,
             "aircraft_fc": aircraft_fc,
             "removal_reason": removal_reason,
             "station": station.strip(),
+            "deferred_ref": deferred_ref,
             "remarks": remarks.strip()
         }
 
@@ -98,6 +138,11 @@ def component_removal_form():
         if errors:
             for err in errors:
                 st.error(err)
-        else:
-            append_removal_event(record)
-            st.success("Component removal recorded successfully")
+            return
+
+        append_removal_event(record)
+
+        if deferred_ref:
+            close_defect(deferred_ref, str(removal_date))
+
+        st.success("Component removal recorded successfully")
