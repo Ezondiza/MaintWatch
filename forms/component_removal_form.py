@@ -1,3 +1,5 @@
+# /forms/component_removal_form.py
+
 import streamlit as st
 from datetime import date
 from validation.component_rules import validate_removal_event
@@ -8,21 +10,26 @@ def component_removal_form():
     st.subheader("Component Removal Entry")
 
     with st.form("component_removal_form"):
-        st.markdown("### Mandatory Information")
 
-        aircraft_reg = st.text_input("Aircraft Registration")
-        component_name = st.text_input("Component Name")
-        part_number = st.text_input("Part Number")
-        serial_number = st.text_input("Serial Number")
-        ata_chapter = st.text_input("ATA Chapter")
+        st.markdown("Mandatory Information")
 
-        removal_date = st.date_input("Removal Date", max_value=date.today())
+        col1, col2, col3 = st.columns(3)
+        aircraft_reg = col1.text_input("Aircraft Reg")
+        ata_chapter = col2.text_input("ATA")
+        removal_date = col3.date_input(
+            "Removal Date",
+            max_value=date.today()
+        )
 
-        col1, col2 = st.columns(2)
-        aircraft_fh = col1.number_input("Aircraft FH at Removal", min_value=0.0)
-        aircraft_fc = col2.number_input("Aircraft FC at Removal", min_value=0)
+        col4, col5, col6 = st.columns(3)
+        component_name = col4.text_input("Component")
+        part_number = col5.text_input("Part Number")
+        serial_number = col6.text_input("Serial Number")
 
-        removal_reason = st.selectbox(
+        col7, col8, col9 = st.columns(3)
+        aircraft_fh = col7.number_input("Aircraft FH", min_value=0.0, step=0.1)
+        aircraft_fc = col8.number_input("Aircraft FC", min_value=0, step=1)
+        removal_reason = col9.selectbox(
             "Removal Reason",
             [
                 "Unscheduled Failure",
@@ -33,13 +40,14 @@ def component_removal_form():
             ]
         )
 
-        st.markdown("### Optional Information")
+        with st.expander("Optional Information"):
+            col10, col11, col12 = st.columns(3)
+            station = col10.text_input("Station")
+            deferred_ref = col11.text_input("Deferred Ref")
+            technician_id = col12.text_input("Technician ID")
 
-        station = st.text_input("Station")
-        deferred_ref = st.text_input("Deferred Reference")
-        work_order = st.text_input("Work Order or Task Card")
-        technician_id = st.text_input("Technician ID")
-        remarks = st.text_area("Remarks")
+            work_order = st.text_input("Work Order or Task Card")
+            remarks = st.text_area("Remarks", height=80)
 
         submitted = st.form_submit_button("Save Removal Event")
 
