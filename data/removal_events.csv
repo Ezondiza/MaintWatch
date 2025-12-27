@@ -1,0 +1,10 @@
+aircraft_reg,component_name,part_number,serial_number,ata_chapter,removal_date,aircraft_fh_at_removal,aircraft_fc_at_removal,removal_reason
+9N-AHB,Fuel Pump,FP-228-01,FP123456,28,2025-01-05,12450.3,9821,Leakage observed
+9N-AHB,Fuel Pump,FP-228-01,FP123789,28,2025-02-10,12545.7,9902,Low pressure
+9N-AHB,Fuel Pump,FP-228-01,FP124012,28,2025-03-15,12650.9,9985,Noisy operation
+9N-AHR,Brake Assembly,BA-228-03,BA456321,32,2025-01-12,11320.5,8702,Uneven braking
+9N-AHR,Brake Assembly,BA-228-03,BA456789,32,2025-04-20,11405.2,8780,Pad wear
+9N-AIE,Hydraulic Actuator,HA-228-07,HA789654,27,2025-02-18,13210.0,10210,Slow retraction
+9N-AIE,Hydraulic Actuator,HA-228-07,HA789987,27,2025-05-22,13340.8,10325,Hydraulic leak
+9N-AJH,Battery Pack,BP-228-05,BP321654,24,2025-03-01,11800.4,9050,Voltage drop
+9N-AJH,Battery Pack,BP-228-05,BP321987,24,2025-06-10,11975.6,9155,Failed to hold charge
