@@ -1,3 +1,5 @@
+# /validation/component_rules.py
+
 def validate_removal_event(record):
     errors = []
 
@@ -20,7 +22,7 @@ def validate_removal_event(record):
     if record.get("aircraft_fh", 0) <= 0:
         errors.append("Aircraft FH must be greater than zero")
 
-    if record.get("aircraft_fc", 0) < 0:
+    if record.get("aircraft_fc", -1) < 0:
         errors.append("Aircraft FC must be zero or greater")
 
     ata = record.get("ata_chapter", "")
