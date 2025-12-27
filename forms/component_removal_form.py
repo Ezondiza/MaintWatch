@@ -1,3 +1,5 @@
+print("LOADING CLEAN COMPONENT REMOVAL FORM v2")
+
 import streamlit as st
 from datetime import date
 
