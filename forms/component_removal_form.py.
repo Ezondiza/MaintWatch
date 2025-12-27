@@ -1,0 +1,33 @@
+import streamlit as st
+
+def component_removal_form():
+    st.subheader("Component Removal Entry")
+
+    with st.form("component_form"):
+        aircraft_reg = st.text_input("Aircraft Registration")
+        ata = st.text_input("ATA Chapter")
+
+        component = st.text_input("Component Name")
+        part_number = st.text_input("Part Number")
+        serial_number = st.text_input("Serial Number")
+
+        col1, col2 = st.columns(2)
+        install_fh = col1.number_input("Install FH", min_value=0.0)
+        install_fc = col2.number_input("Install FC", min_value=0)
+
+        col3, col4 = st.columns(2)
+        removal_fh = col3.number_input("Removal FH", min_value=0.0)
+        removal_fc = col4.number_input("Removal FC", min_value=0)
+
+        removal_reason = st.selectbox(
+            "Removal Reason",
+            ["Unscheduled", "Scheduled", "Life Limit", "Inspection Finding"]
+        )
+
+        station = st.text_input("Station")
+        remarks = st.text_area("Remarks")
+
+        submitted = st.form_submit_button("Save Record")
+
+    if submitted:
+        st.success("Record ready for validation and storage")
