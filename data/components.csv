@@ -1,3 +1,4 @@
+omponent_code,component_name,category,criticality,inspection_interval_days,ata_chapter
 C001,Fuel Pump,Powerplant,Critical,100,28
 C002,Fuel Control Unit,Powerplant,Critical,120,73
 C003,Oil Pressure Pump,Powerplant,Critical,120,79
