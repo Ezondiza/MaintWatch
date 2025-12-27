@@ -1,4 +1,4 @@
-aircraft_reg,component_name,part_number,serial_number,ata_chapter,removal_date,aircraft_fh,aircraft_fc,removal_reason,station,deferred_ref,work_order,technician_id,remarks
+aircraft_reg,component_code,component_name,part_number,serial_number,ata_chapter,category,criticality,removal_date,aircraft_fh,aircraft_fc,removal_reason,station,deferred_ref,work_order,technician_id,remarks
 9N-AHB,Fuel Pump,FP-228-01,FP123456,28,2024-06-15,12000.0,9500,Unscheduled Failure,KTM,,WO-101,T001,Pressure drop
 9N-AHB,Fuel Pump,FP-228-01,FP123456,28,2025-03-20,12680.0,10020,Unscheduled Failure,KTM,,WO-145,T004,Internal leakage
 9N-AHB,Fuel Pump,FP-228-01,FP1001,28,2024-01-15,11800.0,9400,Unscheduled Failure,KTM,,WO-101,T001,Pressure drop
