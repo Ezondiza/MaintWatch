@@ -1,12 +1,2 @@
-defect_id
-aircraft_reg
-defect_date
-ata_chapter
-defect_description
-mel_reference
-deferral_category
-operational_limitations
-raised_by
-status
-closure_date
-remarks
+defect_id,aircraft_reg,defect_date,ata_chapter,defect_description,mel_reference,deferral_category,operational_limitations,raised_by,status,closure_date,remarks
+101,9N-AHB,2025-12-20,28,Fuel Pump low pressure,MEL-28-01,C,None,Technician A,Open,,
