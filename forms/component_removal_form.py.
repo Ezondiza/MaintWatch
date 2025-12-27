@@ -29,5 +29,35 @@ def component_removal_form():
 
         submitted = st.form_submit_button("Save Record")
 
-    if submitted:
-        st.success("Record ready for validation and storage")
+from validation.component_rules import validate_removal_event
+from utils.csv_writer import append_removal_event
+import streamlit as st
+
+...
+
+if submitted:
+    record = {
+        "aircraft_reg": aircraft_reg.strip(),
+        "component_name": component_name.strip(),
+        "part_number": part_number.strip(),
+        "serial_number": serial_number.strip(),
+        "ata_chapter": ata_chapter.strip(),
+        "removal_date": str(removal_date),
+        "aircraft_fh": aircraft_fh,
+        "aircraft_fc": aircraft_fc,
+        "removal_reason": removal_reason,
+        "station": station.strip(),
+        "deferred_ref": deferred_ref.strip(),
+        "work_order": work_order.strip(),
+        "technician_id": technician_id.strip(),
+        "remarks": remarks.strip()
+    }
+
+    errors = validate_removal_event(record)
+
+    if errors:
+        for e in errors:
+            st.error(e)
+    else:
+        append_removal_event(record)
+        st.success("Removal event saved successfully")
