@@ -5,7 +5,9 @@ import pandas as pd
 from datetime import date
 
 from utils.component_master_loader import load_component_master
-from utils.csv_writer import append_removal_event
+# Import from the new Google Sheet loader, but keep the name 'append_removal_event'
+# so you don't have to change the rest of the code.
+from utils.gsheet_loader import append_removal_event_gsheet as append_removal_event
 from validation.component_rules import validate_removal_event
 from utils.defect_closer import close_defect
 
