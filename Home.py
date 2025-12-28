@@ -1,5 +1,6 @@
 import streamlit as st
 from utils.navbar import create_header
+from utils.footer import render_footer
 
 # 1. Page Config
 st.set_page_config(
@@ -29,7 +30,7 @@ with col1:
         * **➕ New Entry:** Record daily component removals.
         * **📊 Dashboard:** Analyze fleet reliability and trends.
         * **📥 Data Upload:** Import historical CSV data.
-        * **🛠️ Admin Tools:** Configure fleet and system references.
+        * **🛠️ Admin Tools:** Configure fleet, system references, and **Generate Test Data**.
         """
     )
 
@@ -43,9 +44,5 @@ with col2:
         """
     )
 
-# Footer
-st.markdown("---")
-st.markdown(
-    "<div style='text-align: center; color: grey;'>MaintWatch © 2025 | Developed by Ghanshyam Acharya</div>", 
-    unsafe_allow_html=True
-)
+# 4. Footer
+render_footer()
