@@ -4,3 +4,5 @@ altair
 numpy
 plotly
 streamlit-authenticator
+gspread
+google-auth
