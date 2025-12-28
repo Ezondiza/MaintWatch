@@ -1,120 +1,42 @@
-# pages/MTBF_Dashboard.py
-
+# /pages/MTBF_Dashboard.py
 import streamlit as st
 import pandas as pd
+from utils.navbar import create_header
 
-from utils.mtbf_calculator import calculate_mtbf_by_component
+# 1. Page Config
+st.set_page_config(page_title="Dashboard", layout="wide", initial_sidebar_state="collapsed")
 
-DATA_REMOVALS = "data/removal_events.csv"
-DATA_COMPONENTS = "data/components.csv"
-
-st.set_page_config(page_title="MTBF Dashboard", layout="wide")
+# 2. Render Navbar
+create_header(current_page="Dashboard")
 
 st.title("MTBF Dashboard")
-st.caption(
-    "MTBF uses unscheduled component removals only. "
-    "Values are based on aircraft FH deltas between repeated removals "
-    "of the same serial number."
-)
+st.markdown("Unscheduled component removal analysis based on aircraft FH deltas.")
 
-# -----------------------------
-# Load data
-# -----------------------------
-
-try:
-    removal_df = pd.read_csv(DATA_REMOVALS)
-    components_df = pd.read_csv(DATA_COMPONENTS)
-except Exception as e:
-    st.error("Failed to load data files")
-    st.stop()
-
-# -----------------------------
-# Validate minimum schema
-# -----------------------------
-
-required_cols = [
-    "component_code",
-    "serial_number",
-    "aircraft_reg",
-    "aircraft_fh",
-    "removal_date",
-    "event_type",
-]
-
-missing = [c for c in required_cols if c not in removal_df.columns]
-
-if missing:
-    st.error(
-        "Removal dataset is missing required columns: "
-        + ", ".join(missing)
+# 3. Data Loading Logic
+# Check if data is already in session state
+if "df" not in st.session_state:
+    st.warning("⚠️ No data loaded yet.")
+    st.markdown(
+        """
+        To view the dashboard, please either:
+        1. Go to **Data Upload** to import historical records.
+        2. Go to **Home** and add a new removal event.
+        """
     )
-    st.dataframe(
-        pd.DataFrame({"available_columns": removal_df.columns})
-    )
-    st.stop()
-
-# -----------------------------
-# MTBF calculation
-# -----------------------------
-
-mtbf_comp = calculate_mtbf_by_component(
-    removal_df=removal_df,
-    components_df=components_df,
-)
-
-if mtbf_comp.empty:
-    st.info("Not enough unscheduled removals to calculate MTBF.")
-    st.stop()
-
-st.subheader("MTBF by Component")
-st.dataframe(mtbf_comp, use_container_width=True)
-
-# -----------------------------
-# Forecasting hook
-# -----------------------------
-
-st.divider()
-st.subheader("Forecasting Hook")
-st.caption(
-    "Simple planning estimate based on fleet hours divided by MTBF. "
-    "Use this for spares sizing and maintenance planning."
-)
-
-col1, col2 = st.columns(2)
-
-fleet_hours = col1.number_input(
-    "Fleet hours for the forecast period",
-    min_value=0.0,
-    step=10.0,
-    value=300.0,
-)
-
-show_top = col2.number_input(
-    "Show top items",
-    min_value=5,
-    step=5,
-    value=15,
-)
-
-forecast_df = mtbf_comp.copy()
-forecast_df = forecast_df[forecast_df["mtbf_fh"] > 0]
-
-forecast_df["expected_failures"] = (
-    fleet_hours / forecast_df["mtbf_fh"]
-).round(2)
-
-out = forecast_df[
-    [
-        "component_code",
-        "component_name",
-        "criticality",
-        "mtbf_fh",
-        "failure_count",
-        "expected_failures",
-    ]
-].head(int(show_top))
-
-st.dataframe(out, use_container_width=True)
-
-chart_df = out.set_index("component_name")[["expected_failures"]]
-st.bar_chart(chart_df)
+    # Optional: You could try to load a default file here if you have one
+    # try:
+    #     from utils.data_loader import load_data
+    #     st.session_state["df"] = load_data()
+    # except:
+    #     pass
+else:
+    # Use the data from session state
+    df = st.session_state["df"]
+    
+    st.success(f"Data Loaded: {len(df)} records available.")
+    
+    # --- YOUR DASHBOARD CODE GOES HERE ---
+    # Paste your charts, metrics, and analysis code below this line.
+    
+    st.metric("Total Component Removals", len(df))
+    st.dataframe(df.head())
