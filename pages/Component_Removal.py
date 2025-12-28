@@ -2,35 +2,37 @@
 import pandas as pd
 import streamlit as st
 from forms.component_removal_form import component_removal_form
+from utils.gsheet_loader import connect_to_sheet
 
 st.set_page_config(page_title="Component Removal", layout="wide")
 
 st.title("Component Removal")
 
+# 1. Render the Form
 component_removal_form()
 
-# Add this at the very bottom of pages/Component_Removal.py
-
+# ---------------------------------------------------------
+# 2. NEW DEBUG SECTION: View Live Google Sheet Data
+# ---------------------------------------------------------
 st.divider()
-st.subheader("🔍 Debug: View Saved Data")
+st.subheader("☁️ Live Google Sheet Data")
 
-import os
-
-if os.path.exists("data/removal_events.csv"):
+# We use a button so it doesn't slow down the app on every load
+if st.button("Refresh Google Sheet Data"):
     try:
-        debug_df = pd.read_csv("data/removal_events.csv")
-        st.dataframe(debug_df)  # This shows the actual live data
+        # Connect to the cloud
+        sheet = connect_to_sheet()
         
-        # Add a download button so you can save it to your computer
-        csv = debug_df.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            "Download Live CSV",
-            csv,
-            "removal_events.csv",
-            "text/csv",
-            key='download-csv'
-        )
+        # specific command to get all data as a list of dictionaries
+        data = sheet.get_all_records()
+        
+        if data:
+            # Convert to a readable table
+            df = pd.DataFrame(data)
+            st.dataframe(df)
+            st.success(f"✅ Successfully loaded {len(df)} rows from Google Sheets.")
+        else:
+            st.warning("⚠️ The Google Sheet is currently empty.")
+            
     except Exception as e:
-        st.error(f"Error reading file: {e}")
-else:
-    st.warning("File data/removal_events.csv does not exist yet.")
+        st.error(f"❌ Error loading data: {e}")
