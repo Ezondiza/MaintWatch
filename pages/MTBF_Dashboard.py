@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 from utils.navbar import create_header
+from utils.footer import render_footer
 
 # 1. Page Config
 st.set_page_config(page_title="Dashboard", layout="wide", initial_sidebar_state="collapsed")
@@ -110,3 +111,4 @@ if not filtered_df.empty:
 
 else:
     st.info("No records match the selected filters.")
+    render_footer()
