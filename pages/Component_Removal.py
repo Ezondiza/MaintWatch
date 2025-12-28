@@ -1,5 +1,5 @@
 # /pages/Component_Removal.py
-
+import pandas as pd
 import streamlit as st
 from forms.component_removal_form import component_removal_form
 
