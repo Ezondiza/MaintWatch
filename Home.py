@@ -1,43 +1,22 @@
 # /Home.py
 import streamlit as st
-from streamlit_option_menu import option_menu
-from utils.data_loader import load_data 
+from utils.navbar import create_header
 
-# 1. Page Configuration (Collapse sidebar to hide default nav)
+# 1. Page Config (Always first)
 st.set_page_config(
     page_title="MaintWatch", 
     layout="wide", 
     initial_sidebar_state="collapsed"
 )
 
-# 2. Horizontal Navigation Menu
-# This replaces the sidebar. You place this at the top of every page, 
-# or use a multi-page app structure where Home directs traffic.
-selected = option_menu(
-    menu_title=None,  # Required to hide the menu title
-    options=["Home", "Dashboard", "Data Entry", "Settings"],  # Your pages
-    icons=["house", "speedometer2", "pencil-square", "gear"], 
-    menu_icon="cast", 
-    default_index=0, 
-    orientation="horizontal",
-    styles={
-        "container": {"padding": "0!important", "background-color": "#f0f2f6"},
-        "icon": {"color": "orange", "font-size": "25px"},
-        "nav-link": {"font-size": "16px", "text-align": "left", "margin": "0px", "--hover-color": "#eee"},
-        "nav-link-selected": {"background-color": "#004080"},
-    }
-)
+# 2. Render Navbar
+create_header(current_page="Home")
 
-# 3. Logic to handle navigation (if keeping everything in one file for now)
-# Ideally, in a multipage app, this menu just helps user visualize, 
-# but Streamlit handles pages via the /pages folder. 
-# For now, let's treat this strictly as the Landing Page view:
-
+# 3. Main Landing Content
 st.title("🛠️ Maintenance Watch")
-st.markdown("#### Component Reliability & MTBF Tracking System")
+st.subheader("Component Reliability and MTBF Tracking")
 st.divider()
 
-# 4. Critical Information / Executive Summary
 col1, col2 = st.columns([2, 1])
 
 with col1:
@@ -45,49 +24,41 @@ with col1:
         """
         **Welcome to MaintWatch.**
         
-        This platform supports aircraft maintenance reliability analysis using component removal history.
-        It provides real-time insights into fleet health and component performance.
-
-        **Core Capabilities:**
-        * **📉 Reliability Analysis:** Track Mean Time Between Failures (MTBF).
-        * **⚠️ Alerting:** Identify components exceeding failure thresholds.
-        * **✈️ Fleet Spares:** Support maintenance planning and forecasting.
+        MaintWatch supports aircraft maintenance reliability analysis using component removal history.
+        
+        **Core Modules:**
+        * **📊 Dashboard:** Analyze Mean Time Between Failures (MTBF) and fleet trends.
+        * **📝 Data Entry:** Record new component removals and replacements.
+        * **🛠️ Admin Tools:** Bulk import historical CSV data and manage database migrations.
         """
     )
 
 with col2:
-    # A placeholder for a "System Status" or "Quick Stat"
     st.info(
         """
         **System Status**
-        
         * **Database:** Connected
-        * **Last Update:** Today, 14:00
-        * **Active User:** CEO-LAPTOP
+        * **User:** CEO-LAPTOP
+        * **Version:** v1.0.2
         """
     )
 
-# 5. Call to Action (Guiding the user)
-st.divider()
+# 4. Quick Action Buttons
+st.markdown("### Quick Actions")
 c1, c2, c3 = st.columns(3)
 with c1:
-    if st.button("➕ New Component Removal"):
-        st.switch_page("pages/1_Data_Entry.py") # Assuming you have this page
+    if st.button("➕ New Removal Event", use_container_width=True):
+        st.switch_page("pages/Component_Removal.py")
 with c2:
-    if st.button("📊 View MTBF Dashboard"):
-        st.switch_page("pages/2_Dashboard.py") # Assuming you have this page
+    if st.button("📈 View Reliability", use_container_width=True):
+        st.switch_page("pages/MTBF_Dashboard.py")
 with c3:
-    if st.button("⚙️ Data Settings"):
-        st.switch_page("pages/Settings.py") # Move the CSV upload/Migrate here
+    if st.button("📥 Import/Admin", use_container_width=True):
+        st.switch_page("pages/Admin_Tools.py")
 
-# 6. Professional Footer
+# 5. Footer
 st.markdown("---")
 st.markdown(
-    """
-    <div style='text-align: center; color: grey; font-size: small;'>
-    MaintWatch v1.0 | Developed by Ghanshyam Acharya | © 2025 Sita Air<br>
-    <i>Unauthorized access is prohibited.</i>
-    </div>
-    """,
+    "<div style='text-align: center; color: grey;'>MaintWatch © 2025 | Developed by Ghanshyam Acharya</div>", 
     unsafe_allow_html=True
 )
