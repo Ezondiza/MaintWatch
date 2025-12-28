@@ -1,30 +1,16 @@
 # /pages/Component_Removal.py
-import pandas as pd
 import streamlit as st
-from forms.component_removal_form import component_removal_form
-from utils.gsheet_loader import connect_to_sheet
+from utils.navbar import create_header
 
-st.set_page_config(page_title="Component Removal", layout="wide")
-st.title("Component Removal")
+st.set_page_config(page_title="New Removal", layout="wide", initial_sidebar_state="collapsed")
 
-# 1. Render the Main Form
-component_removal_form()
+# Note: Since this page isn't in the top menu, we can default the highlight to "Home"
+# or just leave it unselected.
+create_header(current_page="Home") 
 
-# 2. Simple "Recent Activity" Log (Cleaner than the Debug View)
-st.divider()
-st.subheader("📋 Recent Removal Events")
+st.title("➕ New Component Removal Event")
+st.markdown("Record a single unscheduled removal event.")
 
-if st.button("Check Last 5 Entries"):
-    try:
-        sheet = connect_to_sheet()
-        if sheet:
-            # Fetch all records
-            data = sheet.get_all_records()
-            if data:
-                df = pd.DataFrame(data)
-                # Show only the last 5 rows
-                st.dataframe(df.tail(5), use_container_width=True)
-            else:
-                st.info("Log is currently empty.")
-    except Exception as e:
-        st.error(f"Could not load history: {e}")
+# ... Place your original form code here ...
+# with st.form("removal_form"):
+#    ...
