@@ -1,147 +1,88 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+from datetime import date
 from utils.navbar import create_header
+from utils.data_loader import load_data
 
-# 1. Page Configuration
-st.set_page_config(page_title="Reliability Dashboard", layout="wide", initial_sidebar_state="collapsed")
+# 1. Page Config
+st.set_page_config(page_title="New Removal", layout="wide", initial_sidebar_state="collapsed")
 
-# 2. Render Navbar
-create_header(current_page="Dashboard")
+# 2. Render Navbar (Select 'New Entry')
+create_header(current_page="New Entry")
 
-st.title("📊 Reliability & MTBF Dashboard")
+st.title("➕ New Component Removal")
+st.markdown("Record an unscheduled component removal event.")
 
-# 3. Data Loading & Validation
-if "df" not in st.session_state or st.session_state["df"].empty:
-    st.warning("⚠️ No data currently loaded.")
-    st.info("Please go to **Data Upload** to import your historical Google Sheet data (as CSV) or enter a **New Removal**.")
-    st.stop() # Stop execution here if no data
-
-# Load data from session state
-df = st.session_state["df"]
-
-# Ensure Date column is actually datetime objects (critical for plotting)
+# 3. Load Reference Data (Technicians, Pilots, Components)
 try:
-    df["Date"] = pd.to_datetime(df["Date"])
+    components, technicians, pilots = load_data()
 except Exception as e:
-    st.error(f"Date format error: {e}")
-    st.stop()
+    # Fallback if files are missing
+    st.warning("Could not load reference files. Using generic lists.")
+    components = ["Main Wheel", "Brake Unit", "Starter Generator", "Fuel Pump"]
+    technicians = ["Tech A", "Tech B"]
+    pilots = ["Capt. X", "Capt. Y"]
 
-# --- 4. SIDEBAR / TOP FILTERS ---
-# We use standard columns for filters since sidebar is hidden
-st.markdown("### 🔎 Filters")
-f1, f2, f3 = st.columns(3)
-
-with f1:
-    # Get unique aircraft sorted
-    available_aircraft = sorted(df["Aircraft"].astype(str).unique().tolist())
-    selected_ac = st.multiselect("Select Aircraft", available_aircraft, default=available_aircraft)
-
-with f2:
-    # Get unique ATA chapters
-    available_ata = sorted(df["ATA"].astype(str).unique().tolist())
-    selected_ata = st.multiselect("Select ATA Chapter", available_ata, default=available_ata)
-
-with f3:
-    # Date Range Filter
-    min_date = df["Date"].min().date()
-    max_date = df["Date"].max().date()
-    date_range = st.date_input("Date Range", [min_date, max_date])
-
-# --- 5. FILTERING LOGIC ---
-# Apply filters to the dataframe
-mask = (
-    df["Aircraft"].isin(selected_ac) & 
-    df["ATA"].isin(selected_ata) & 
-    (df["Date"].dt.date >= date_range[0]) & 
-    (df["Date"].dt.date <= date_range[1])
-)
-filtered_df = df[mask]
-
-# --- 6. KPI METRICS ---
-st.divider()
-m1, m2, m3, m4 = st.columns(4)
-
-total_removals = len(filtered_df)
-unique_components = filtered_df["Component"].nunique()
-top_offender = filtered_df["Component"].mode()
-if not top_offender.empty:
-    top_offender = top_offender[0]
-else:
-    top_offender = "N/A"
-
-with m1:
-    st.metric("Total Removals", total_removals)
-with m2:
-    st.metric("Unique Components", unique_components)
-with m3:
-    st.metric("Top Offender (Component)", top_offender)
-with m4:
-    # Placeholder for MTBF if you have Flight Hours later
-    st.metric("Fleet Reliability %", "98.5%") 
-
-# --- 7. VISUALIZATIONS ---
-
-# ROW 1: The Missing Scatter Plot & Timeline
-st.subheader("📅 Component Removal Timeline")
-
-if not filtered_df.empty:
-    # SCATTER PLOT: Date vs Aircraft, colored by ATA or Component
-    fig_scatter = px.scatter(
-        filtered_df,
-        x="Date",
-        y="Aircraft",
-        color="ATA",
-        hover_data=["Component", "Part Number", "Reason", "Technician"],
-        title="Removal Events Distribution by Aircraft",
-        size_max=10
-    )
-    # Improve visual style
-    fig_scatter.update_traces(marker=dict(size=12, line=dict(width=2, color='DarkSlateGrey')))
-    fig_scatter.update_layout(height=400, xaxis_title="Date", yaxis_title="Aircraft Registration")
+# 4. THE FORM
+with st.form("removal_entry_form"):
+    st.subheader("Event Details")
     
-    st.plotly_chart(fig_scatter, use_container_width=True)
-
-    # ROW 2: Bar Charts
-    c1, c2 = st.columns(2)
-
+    c1, c2, c3 = st.columns(3)
     with c1:
-        st.subheader("Pareto: Top 10 Components")
-        # Count removals by Component
-        comp_counts = filtered_df["Component"].value_counts().nlargest(10).reset_index()
-        comp_counts.columns = ["Component", "Count"]
-        
-        fig_bar = px.bar(
-            comp_counts, 
-            x="Count", 
-            y="Component", 
-            orientation='h',
-            text="Count",
-            title="Top 10 Most Removed Components"
-        )
-        fig_bar.update_layout(yaxis={'categoryorder':'total ascending'})
-        st.plotly_chart(fig_bar, use_container_width=True)
-
+        event_date = st.date_input("Date of Removal", value=date.today())
     with c2:
-        st.subheader("Removals by ATA Chapter")
-        ata_counts = filtered_df["ATA"].value_counts().reset_index()
-        ata_counts.columns = ["ATA Chapter", "Count"]
-        
-        fig_pie = px.pie(
-            ata_counts, 
-            values="Count", 
-            names="ATA Chapter", 
-            title="Distribution by ATA System",
-            hole=0.4
-        )
-        st.plotly_chart(fig_pie, use_container_width=True)
+        aircraft_reg = st.text_input("Aircraft Registration", placeholder="e.g., 9N-AHA") 
+    with c3:
+        ata_chapter = st.text_input("ATA Chapter", placeholder="e.g., 32-40")
 
-    # --- 8. DATA TABLE VIEW ---
-    with st.expander("📄 View Detailed Data"):
-        st.dataframe(
-            filtered_df.sort_values(by="Date", ascending=False),
-            use_container_width=True
-        )
+    st.subheader("Component Details")
+    c4, c5 = st.columns(2)
+    with c4:
+        comp_name = st.selectbox("Component Name", options=components)
+    with c5:
+        part_number = st.text_input("Part Number (P/N)")
 
-else:
-    st.warning("No data matches the selected filters.")
+    c6, c7 = st.columns(2)
+    with c6:
+        serial_off = st.text_input("Serial Number OFF")
+    with c7:
+        serial_on = st.text_input("Serial Number ON")
+
+    st.subheader("Maintenance Data")
+    removal_reason = st.text_area("Reason for Removal / Defect Description")
+    
+    c8, c9 = st.columns(2)
+    with c8:
+        tech_name = st.selectbox("Technician", options=technicians)
+    with c9:
+        pilot_name = st.selectbox("Pilot Reporting", options=pilots)
+
+    # 5. SUBMIT BUTTON
+    submitted = st.form_submit_button("💾 Save Removal Event", type="primary")
+
+    if submitted:
+        if not aircraft_reg or not serial_off:
+            st.error("⚠️ Please fill in at least Aircraft Registration and Serial Number.")
+        else:
+            # Create a dictionary for the new row
+            new_entry = {
+                "Date": pd.to_datetime(event_date),
+                "Aircraft": aircraft_reg,
+                "ATA": ata_chapter,
+                "Component": comp_name,
+                "Part Number": part_number,
+                "Serial Number Off": serial_off,
+                "Serial Number On": serial_on,
+                "Reason": removal_reason,
+                "Technician": tech_name,
+                "Pilot": pilot_name
+            }
+            
+            # Save to Session State (so it appears on Dashboard immediately)
+            if "df" in st.session_state:
+                new_df = pd.DataFrame([new_entry])
+                st.session_state["df"] = pd.concat([st.session_state["df"], new_df], ignore_index=True)
+            else:
+                st.session_state["df"] = pd.DataFrame([new_entry])
+            
+            st.success(f"✅ Event recorded successfully for {comp_name}")
