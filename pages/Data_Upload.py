@@ -2,6 +2,7 @@
 import streamlit as st
 from utils.navbar import create_header
 from utils.data_loader import load_maintenance, merge_data, load_data
+from utils.footer import render_footer
 
 st.set_page_config(page_title="Data Upload", layout="wide", initial_sidebar_state="collapsed")
 create_header(current_page="Data Upload")
@@ -30,3 +31,4 @@ if uploaded_file:
         
     except Exception as e:
         st.error(f"Error processing file: {e}")
+        render_footer()
