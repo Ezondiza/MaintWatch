@@ -5,34 +5,26 @@ from forms.component_removal_form import component_removal_form
 from utils.gsheet_loader import connect_to_sheet
 
 st.set_page_config(page_title="Component Removal", layout="wide")
-
 st.title("Component Removal")
 
-# 1. Render the Form
+# 1. Render the Main Form
 component_removal_form()
 
-# ---------------------------------------------------------
-# 2. NEW DEBUG SECTION: View Live Google Sheet Data
-# ---------------------------------------------------------
+# 2. Simple "Recent Activity" Log (Cleaner than the Debug View)
 st.divider()
-st.subheader("☁️ Live Google Sheet Data")
+st.subheader("📋 Recent Removal Events")
 
-# We use a button so it doesn't slow down the app on every load
-if st.button("Refresh Google Sheet Data"):
+if st.button("Check Last 5 Entries"):
     try:
-        # Connect to the cloud
         sheet = connect_to_sheet()
-        
-        # specific command to get all data as a list of dictionaries
-        data = sheet.get_all_records()
-        
-        if data:
-            # Convert to a readable table
-            df = pd.DataFrame(data)
-            st.dataframe(df)
-            st.success(f"✅ Successfully loaded {len(df)} rows from Google Sheets.")
-        else:
-            st.warning("⚠️ The Google Sheet is currently empty.")
-            
+        if sheet:
+            # Fetch all records
+            data = sheet.get_all_records()
+            if data:
+                df = pd.DataFrame(data)
+                # Show only the last 5 rows
+                st.dataframe(df.tail(5), use_container_width=True)
+            else:
+                st.info("Log is currently empty.")
     except Exception as e:
-        st.error(f"❌ Error loading data: {e}")
+        st.error(f"Could not load history: {e}")
