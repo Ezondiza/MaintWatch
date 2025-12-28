@@ -1,29 +1,45 @@
+# /pages/Admin_Tools.py
 import streamlit as st
 from utils.navbar import create_header
-from utils.data_loader import load_maintenance, merge_data, load_data
-from utils.migrate_removal_events import migrate_removal_events
 
-st.set_page_config(page_title="Admin Tools", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Admin Configuration", layout="wide", initial_sidebar_state="collapsed")
 create_header(current_page="Admin Tools")
 
-st.title("🛠️ Admin Tools")
+st.title("🛠️ System Configuration")
+st.markdown("Manage system references, aircraft fleet, and database maintenance.")
 
-st.warning("⚠️ Restricted Area: These tools affect the core database.")
+# Create Tabs for the different Admin Functions
+tab1, tab2, tab3 = st.tabs(["✈️ Aircraft Fleet", "📚 ATA Chapters", "⚠️ Danger Zone"])
 
-st.subheader("1. Historical Data Import")
-uploaded_file = st.file_uploader("Upload historical removal data (CSV)", type="csv")
+# --- TAB 1: AIRCRAFT DETAILS ---
+with tab1:
+    st.subheader("Manage Fleet Details")
+    st.info("Feature coming soon: Add/Edit Aircraft Registrations and MSN.")
+    # Placeholder for future form
+    # with st.form("add_aircraft"):
+    #    st.text_input("Registration (e.g., 9N-AHA)")
+    #    st.form_submit_button("Add Aircraft")
 
-if uploaded_file:
-    # Your original loading logic
-    components, technicians, pilots = load_data()
-    df = load_maintenance(uploaded_file)
-    df = merge_data(df, components, technicians, pilots)
-    st.session_state["df"] = df
-    st.success(f"Successfully loaded {len(df)} records from history.")
+# --- TAB 2: ATA REFERENCES ---
+with tab2:
+    st.subheader("Manage ATA Chapter References")
+    st.info("Feature coming soon: Add/Edit ATA Chapter descriptions.")
+    # Placeholder for future table editor
+    # st.data_editor(df_ata_codes)
 
-st.divider()
-
-st.subheader("2. Database Maintenance")
-if st.button("Run Migration (Update Schema)"):
-    migrate_removal_events()
-    st.success("Migration complete.")
+# --- TAB 3: DANGER ZONE (WIPE) ---
+with tab3:
+    st.subheader("Database Maintenance")
+    st.error("⚠️ **Critical Actions**")
+    
+    st.markdown("These actions are irreversible.")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🗑️ Wipe All Data", type="primary"):
+            # Logic to clear session state or truncate DB tables
+            st.session_state.clear()
+            st.toast("System memory cleared!", icon="🧹")
+            st.rerun()
+            
+    st.caption("Use 'Wipe All Data' to reset the current session for testing.")
