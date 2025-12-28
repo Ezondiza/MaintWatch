@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import date
 from utils.navbar import create_header
 from utils.data_loader import load_data
+from utils.footer import render_footer
 
 # 1. Page Config
 st.set_page_config(page_title="New Removal", layout="wide", initial_sidebar_state="collapsed")
@@ -86,3 +87,4 @@ with st.form("removal_entry_form"):
                 st.session_state["df"] = pd.DataFrame([new_entry])
             
             st.success(f"✅ Event recorded successfully for {comp_name}")
+            render_footer()
