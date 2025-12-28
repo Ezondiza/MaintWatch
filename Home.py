@@ -1,8 +1,7 @@
-# /Home.py
 import streamlit as st
 from utils.navbar import create_header
 
-# 1. Page Config (Must be the very first command in the script)
+# 1. Page Config
 st.set_page_config(
     page_title="MaintWatch", 
     layout="wide", 
@@ -12,9 +11,9 @@ st.set_page_config(
 # 2. Render Navbar
 create_header(current_page="Home")
 
-# 3. Main Landing Content
+# 3. Main Content
 st.title("🛠️ Maintenance Watch")
-st.subheader("Component Reliability and MTBF Tracking")
+st.subheader("Component Reliability & MTBF Tracking")
 st.divider()
 
 col1, col2 = st.columns([2, 1])
@@ -22,14 +21,15 @@ col1, col2 = st.columns([2, 1])
 with col1:
     st.markdown(
         """
-        **Welcome to MaintWatch.**
+        ### Welcome to MaintWatch
         
-        MaintWatch supports aircraft maintenance reliability analysis using component removal history.
+        This platform supports aircraft maintenance reliability analysis.
+        Use the **Navigation Bar** above to access all modules:
         
-        **Core Modules:**
-        * **📊 Dashboard:** Analyze Mean Time Between Failures (MTBF) and fleet trends.
-        * **📝 Data Upload:** Bulk import historical CSV data for backfilling.
-        * **🛠️ Admin Tools:** Manage aircraft fleet details and ATA chapters.
+        * **➕ New Entry:** Record daily component removals.
+        * **📊 Dashboard:** Analyze fleet reliability and trends.
+        * **📥 Data Upload:** Import historical CSV data.
+        * **🛠️ Admin Tools:** Configure fleet and system references.
         """
     )
 
@@ -39,30 +39,11 @@ with col2:
         **System Status**
         * **Database:** Connected
         * **User:** CEO-LAPTOP
-        * **Version:** v1.0.3
+        * **Version:** v1.1.0
         """
     )
 
-# 4. Quick Action Buttons
-st.markdown("### Quick Actions")
-c1, c2, c3 = st.columns(3)
-
-with c1:
-    # Links to the Daily Entry page (hidden from top menu, but accessible here)
-    if st.button("➕ New Removal Event", use_container_width=True):
-        st.switch_page("pages/Component_Removal.py")
-
-with c2:
-    # Links to the Dashboard
-    if st.button("📈 View Reliability", use_container_width=True):
-        st.switch_page("pages/MTBF_Dashboard.py")
-
-with c3:
-    # Links to the Data Upload page
-    if st.button("📥 Upload History", use_container_width=True):
-        st.switch_page("pages/Data_Upload.py")
-
-# 5. Footer
+# Footer
 st.markdown("---")
 st.markdown(
     "<div style='text-align: center; color: grey;'>MaintWatch © 2025 | Developed by Ghanshyam Acharya</div>", 
