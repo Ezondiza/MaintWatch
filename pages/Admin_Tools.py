@@ -9,15 +9,50 @@ st.set_page_config(page_title="Admin Tools", layout="wide", initial_sidebar_stat
 create_header(current_page="Admin Tools")
 
 st.title("🛠️ Admin Tools")
+
+# --- SECURITY GATE ---
+# Simple password protection to prevent unauthorized access
+# In a real production app, use st.secrets for the password.
+# For now, let's hardcode a default password for testing: "admin123"
+
+# check if we are already logged in via session state
+if "admin_access" not in st.session_state:
+    st.session_state["admin_access"] = False
+
+if not st.session_state["admin_access"]:
+    st.warning("🔒 Restricted Access: Administrator privileges required.")
+    
+    password = st.text_input("Enter Admin Password", type="password")
+    
+    if st.button("Login"):
+        # YOU CAN CHANGE "admin123" TO WHATEVER PASSWORD YOU WANT
+        if password == "admin123":
+            st.session_state["admin_access"] = True
+            st.success("Access Granted.")
+            st.rerun()
+        else:
+            st.error("❌ Incorrect Password.")
+    
+    # Stop the script here if not logged in
+    st.stop()
+
+# =========================================================
+# IF CODE REACHES HERE, THE USER IS LOGGED IN
+# =========================================================
+
+if st.button("🔒 Logout"):
+    st.session_state["admin_access"] = False
+    st.rerun()
+
 st.markdown("System configuration, fleet management, and testing utilities.")
 
 # Create Tabs
 tab1, tab2, tab3, tab4 = st.tabs(["✈️ Aircraft Fleet", "📚 ATA Chapters", "🧪 Testing Data", "⚠️ Danger Zone"])
 
-# --- TAB 1: AIRCRAFT FLEET CONFIGURATION ---
+# --- TAB 1: AIRCRAFT FLEET ---
 with tab1:
     st.subheader("Manage Fleet Details")
-    st.markdown("Add new aircraft to the fleet database. Used for validation and reporting.")
+    st.markdown("Add new aircraft to the fleet database.")
     
     with st.form("fleet_form", clear_on_submit=True):
         col1, col2 = st.columns(2)
@@ -39,10 +74,9 @@ with tab1:
             else:
                 st.error("⚠️ Registration and MSN are required.")
 
-# --- TAB 2: ATA CHAPTERS CONFIGURATION ---
+# --- TAB 2: ATA CHAPTERS ---
 with tab2:
     st.subheader("Manage ATA References")
-    st.markdown("Define standard ATA chapters for component categorization.")
     
     with st.form("ata_form", clear_on_submit=True):
         col1, col2 = st.columns([1, 3])
@@ -67,7 +101,6 @@ with tab3:
     st.subheader("Generate & Sync Dummy Data")
     
     if st.button("🔄 Generate 50 Records & Sync to Cloud"):
-        # (Same logic as before)
         dates = pd.date_range(start="2024-01-01", periods=50)
         data = {
             "aircraft_reg": np.random.choice(["9N-AHA", "9N-AHB", "9N-AIC"], 50),
@@ -99,7 +132,6 @@ with tab4:
     st.error("⚠️ **Critical Actions**")
     st.markdown("These actions affect the local session memory immediately.")
 
-    # Using a form helps prevent accidental clicks and ensures layout stability
     with st.form("danger_zone_form"):
         st.warning("Are you sure you want to wipe the session data?")
         wipe_confirm = st.form_submit_button("🗑️ Yes, Wipe All Session Data", type="primary")
