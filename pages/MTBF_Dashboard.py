@@ -13,44 +13,47 @@ st.title("📊 Reliability & MTBF Dashboard")
 # 2. CHECK FOR DATA
 if "df" not in st.session_state or st.session_state["df"].empty:
     st.warning("⚠️ No data currently loaded.")
-    st.info("Please go to **Data Upload** to import your CSV, or **Admin Tools** to generate test data.")
+    st.info("Please go to **Data Upload** to fetch data from the cloud.")
     render_footer()
     st.stop()
 
-df = st.session_state["df"]
+df = st.session_state["df"].copy() # Work on a copy to avoid corrupting session state
 
-# 3. NORMALIZE COLUMNS (The Fix for Date Error)
-# We create a map to standardize whatever columns come in (CSV vs Google Sheet)
-# Your Google Sheet uses: 'removal_date', 'aircraft_reg', 'ata_chapter'
+# 3. NORMALIZE COLUMNS
+# Map Google Sheet names to Dashboard standard names
 column_map = {
     "removal_date": "Date",
-    "Date of Removal": "Date",
     "aircraft_reg": "Aircraft",
-    "Registration": "Aircraft",
     "ata_chapter": "ATA",
-    "ATA Chapter": "ATA",
     "component_name": "Component",
-    "Component Name": "Component",
     "removal_reason": "Reason"
 }
 df = df.rename(columns=column_map)
 
-# 4. CONVERT DATE (Robust)
+# --- 4. DATA TYPE FIX (THE CRITICAL STEP) ---
+# Ensure these columns exist, then force them to be Strings
+if "Aircraft" in df.columns:
+    df["Aircraft"] = df["Aircraft"].astype(str)
+    
+if "ATA" in df.columns:
+    df["ATA"] = df["ATA"].astype(str)
+
+# 5. DATE CONVERSION
 try:
     df["Date"] = pd.to_datetime(df["Date"])
 except Exception as e:
-    st.error(f"Error: 'Date' column is not in a recognizable format. Debug info: {e}")
-    st.write("First few rows of raw data:", df.head())
+    st.error(f"Error parsing dates: {e}")
     st.stop()
 
-# 5. FILTERS
+# 6. FILTERS
 st.markdown("### 🔎 Filters")
 f1, f2, f3 = st.columns(3)
 
 # Filter: Aircraft
 with f1:
     if "Aircraft" in df.columns:
-        avail_ac = sorted(df["Aircraft"].astype(str).unique())
+        # Get unique values as a sorted list
+        avail_ac = sorted(list(df["Aircraft"].unique()))
         sel_ac = st.multiselect("Aircraft", avail_ac, default=avail_ac)
     else:
         sel_ac = []
@@ -58,25 +61,26 @@ with f1:
 # Filter: ATA
 with f2:
     if "ATA" in df.columns:
-        avail_ata = sorted(df["ATA"].astype(str).unique())
+        # Get unique values as a sorted list
+        avail_ata = sorted(list(df["ATA"].unique()))
         sel_ata = st.multiselect("ATA Chapter", avail_ata, default=avail_ata)
     else:
         sel_ata = []
 
 # Filter: Date
 with f3:
-    if not df.empty and "Date" in df.columns:
+    if "Date" in df.columns and not df.empty:
         min_d = df["Date"].min().date()
         max_d = df["Date"].max().date()
         sel_date = st.date_input("Date Range", [min_d, max_d])
     else:
-        sel_date = [pd.Timestamp.today(), pd.Timestamp.today()]
+        sel_date = []
 
-# 6. APPLY FILTERS
+# 7. APPLY FILTERS
 if "Aircraft" in df.columns and "ATA" in df.columns:
     mask = (df["Aircraft"].isin(sel_ac)) & (df["ATA"].isin(sel_ata))
     
-    # Handle Date Filter safely
+    # Handle Date Filter
     if len(sel_date) == 2:
         mask = mask & (df["Date"].dt.date >= sel_date[0]) & (df["Date"].dt.date <= sel_date[1])
         
@@ -84,17 +88,22 @@ if "Aircraft" in df.columns and "ATA" in df.columns:
 else:
     filtered_df = df
 
-# 7. CHARTS
+# 8. VISUALIZATIONS
 if not filtered_df.empty:
     st.divider()
     
+    # KPI Metrics
     k1, k2, k3 = st.columns(3)
     k1.metric("Total Removals", len(filtered_df))
     if "Component" in filtered_df.columns:
         k2.metric("Unique Components", filtered_df["Component"].nunique())
     if "ATA" in filtered_df.columns:
-        k3.metric("Most Frequent ATA", filtered_df["ATA"].mode()[0] if not filtered_df["ATA"].empty else "N/A")
+        # Calculate mode safely
+        mode_val = filtered_df["ATA"].mode()
+        top_ata = mode_val[0] if not mode_val.empty else "N/A"
+        k3.metric("Most Frequent ATA", top_ata)
 
+    # --- CHART 1: SCATTER PLOT ---
     st.subheader("📅 Component Removal Timeline")
     
     if "Aircraft" in filtered_df.columns:
@@ -102,15 +111,16 @@ if not filtered_df.empty:
             filtered_df,
             x="Date",
             y="Aircraft",
-            color="ATA" if "ATA" in filtered_df.columns else None,
+            color="ATA",
             hover_data=["Component", "Reason"] if "Component" in filtered_df.columns else None,
             title="Removal Events by Date",
             size_max=15
         )
+        # Make dots bigger and add border
         fig.update_traces(marker=dict(size=14, line=dict(width=1, color='DarkSlateGrey')))
         st.plotly_chart(fig, use_container_width=True)
 
-    # Bar Chart
+    # --- CHART 2: BAR CHART ---
     if "Component" in filtered_df.columns:
         st.subheader("🏆 Top Offending Components")
         top_comp = filtered_df["Component"].value_counts().nlargest(10).reset_index()
@@ -121,6 +131,9 @@ if not filtered_df.empty:
         st.plotly_chart(fig_bar, use_container_width=True)
 
 else:
-    st.info("No records match the selected filters.")
+    st.warning("No records match the selected filters.")
+    st.write("Debug - Current Filter Selection:")
+    st.write(f"Aircraft: {sel_ac}")
+    st.write(f"ATA: {sel_ata}")
 
 render_footer()
