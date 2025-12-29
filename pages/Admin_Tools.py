@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from utils.navbar import create_header
 from utils.footer import render_footer
-from utils.gsheet_loader import write_bulk_data, write_data_to_sheet, clear_worksheet_data
+from utils.gsheet_loader import write_bulk_data, write_data_to_sheet, clear_worksheet_data, fetch_all_data
 
 # 1. Page Config
 st.set_page_config(page_title="Admin Tools", layout="wide", initial_sidebar_state="collapsed")
@@ -15,67 +15,81 @@ st.markdown("System configuration, fleet management, and testing utilities.")
 # Create Tabs
 tab1, tab2, tab3, tab4 = st.tabs(["✈️ Aircraft Fleet", "📚 ATA Chapters", "🧪 Testing Data", "⚠️ Danger Zone"])
 
-# --- TAB 1: AIRCRAFT FLEET CONFIGURATION (RESTORED) ---
+# --- TAB 1: AIRCRAFT FLEET CONFIGURATION ---
 with tab1:
     st.subheader("Manage Fleet Details")
-    st.markdown("Add new aircraft to the fleet database.")
     
-    # THE FORM IS BACK HERE
-    with st.form("fleet_form", clear_on_submit=True):
-        col1, col2 = st.columns(2)
-        with col1:
+    col_form, col_view = st.columns([1, 1])
+    
+    # LEFT: Input Form
+    with col_form:
+        st.markdown("##### Add New Aircraft")
+        with st.form("fleet_form", clear_on_submit=True):
             reg = st.text_input("Aircraft Registration", placeholder="e.g., 9N-AHA")
             msn = st.text_input("Manufacturer Serial No. (MSN)", placeholder="e.g., 12345")
-        with col2:
             fh = st.number_input("Current Flight Hours (FH)", min_value=0.0, step=0.1)
             fc = st.number_input("Current Flight Cycles (FC)", min_value=0, step=1)
             
-        submitted_fleet = st.form_submit_button("💾 Save Aircraft")
-        
-        if submitted_fleet:
-            if reg and msn:
-                data = {"Registration": reg, "MSN": msn, "FH": fh, "FC": fc}
-                with st.spinner("Saving to Google Sheet..."):
-                    # Writes to 'aircraft_fleet' tab
-                    if write_data_to_sheet(data, "aircraft_fleet"):
-                        st.success(f"✅ Aircraft {reg} added successfully!")
-            else:
-                st.error("⚠️ Registration and MSN are required.")
+            if st.form_submit_button("💾 Save Aircraft"):
+                if reg and msn:
+                    data = {"Registration": reg, "MSN": msn, "FH": fh, "FC": fc}
+                    with st.spinner("Saving to Google Sheet..."):
+                        if write_data_to_sheet(data, "aircraft_fleet"):
+                            st.success(f"✅ {reg} added!")
+                            st.rerun() # Refresh to show new data in table
+                else:
+                    st.error("⚠️ Registration and MSN are required.")
 
-# --- TAB 2: ATA CHAPTERS CONFIGURATION (RESTORED) ---
+    # RIGHT: Live View of Google Sheet
+    with col_view:
+        st.markdown("##### Current Fleet List (Live from Cloud)")
+        df_fleet = fetch_all_data("aircraft_fleet")
+        if not df_fleet.empty:
+            st.dataframe(df_fleet, use_container_width=True)
+        else:
+            st.info("No aircraft found in database.")
+
+# --- TAB 2: ATA CHAPTERS CONFIGURATION ---
 with tab2:
     st.subheader("Manage ATA References")
-    st.markdown("Define standard ATA chapters for dropdown lists.")
     
-    # THE FORM IS BACK HERE
-    with st.form("ata_form", clear_on_submit=True):
-        col1, col2 = st.columns([1, 3])
-        with col1:
+    col_form, col_view = st.columns([1, 1])
+    
+    # LEFT: Input Form
+    with col_form:
+        st.markdown("##### Add ATA Chapter")
+        with st.form("ata_form", clear_on_submit=True):
             ata_code = st.text_input("ATA Chapter Code", placeholder="e.g., 32")
-        with col2:
             ata_desc = st.text_input("Description", placeholder="e.g., Landing Gear")
             
-        submitted_ata = st.form_submit_button("💾 Save ATA Chapter")
-        
-        if submitted_ata:
-            if ata_code and ata_desc:
-                data = {"Chapter": ata_code, "Description": ata_desc}
-                with st.spinner("Saving to Google Sheet..."):
-                    # Writes to 'ata_chapters' tab
-                    if write_data_to_sheet(data, "ata_chapters"):
-                        st.success(f"✅ ATA {ata_code} added successfully!")
-            else:
-                st.error("⚠️ Both Code and Description are required.")
+            if st.form_submit_button("💾 Save ATA Chapter"):
+                if ata_code and ata_desc:
+                    data = {"Chapter": ata_code, "Description": ata_desc}
+                    with st.spinner("Saving to Google Sheet..."):
+                        if write_data_to_sheet(data, "ata_chapters"):
+                            st.success(f"✅ ATA {ata_code} added!")
+                            st.rerun() # Refresh to show new data
+                else:
+                    st.error("⚠️ Code and Description required.")
+
+    # RIGHT: Live View
+    with col_view:
+        st.markdown("##### Current ATA List (Live from Cloud)")
+        df_ata = fetch_all_data("ata_chapters")
+        if not df_ata.empty:
+            st.dataframe(df_ata, use_container_width=True)
+        else:
+            st.info("No ATA chapters found.")
 
 # --- TAB 3: DUMMY DATA GENERATOR ---
 with tab3:
     st.subheader("Generate & Sync Dummy Data")
-    st.markdown("This will generate 50 rows including the new **Component Type** column.")
+    st.markdown("Generate 50 random rows for the **removal_events** tab.")
 
     if st.button("🔄 Generate 50 Records & Sync to Cloud"):
         dates = pd.date_range(start="2024-01-01", periods=50)
         
-        # Schema matches Google Sheet exactly
+        # Matches Google Sheet Schema
         data = {
             "aircraft_reg": np.random.choice(["9N-AHA", "9N-AHB", "9N-AIC"], 50),
             "component_code": ["C-123"] * 50,
@@ -97,7 +111,7 @@ with tab3:
         
         if success:
             st.session_state["df"] = df_demo
-            st.success("✅ Google Sheet regenerated with 50 new records.")
+            st.success("✅ Google Sheet 'removal_events' populated.")
         else:
             st.error("⚠️ Failed to write to Google Sheet.")
 
@@ -108,28 +122,23 @@ with tab4:
     
     col1, col2 = st.columns(2)
     
-    # 1. Wipe Session
     with col1:
-        st.markdown("##### 1. Clear Session (RAM)")
-        st.caption("Resets the app memory. Does not affect Google Sheet.")
-        if st.button("🗑️ Wipe Session"):
+        st.markdown("##### 1. Clear Session")
+        if st.button("🗑️ Wipe RAM"):
             st.session_state.clear()
             st.rerun()
 
-    # 2. Wipe Google Sheet
     with col2:
-        st.markdown("##### 2. Wipe Google Sheet (Cloud)")
-        st.caption("Permanently deletes ALL rows in 'removal_events'.")
+        st.markdown("##### 2. Wipe Historical Data")
+        st.caption("Clears 'removal_events' tab only. Keeps Fleet/ATA data safe.")
         
-        confirm_wipe = st.checkbox("I confirm I want to delete all historical data.")
+        confirm_wipe = st.checkbox("I confirm I want to delete historical removal data.")
         
-        if st.button("🔥 Wipe Cloud Database", type="primary", disabled=not confirm_wipe):
-            with st.spinner("Deleting all rows from Google Sheet..."):
+        if st.button("🔥 Wipe Removal Events", type="primary", disabled=not confirm_wipe):
+            with st.spinner("Wiping 'removal_events'..."):
                 if clear_worksheet_data("removal_events"):
-                    st.toast("Google Sheet cleared successfully!", icon="🧹")
-                    st.success("✅ 'removal_events' tab is now empty.")
+                    st.toast("History cleared!", icon="🧹")
+                    st.success("✅ 'removal_events' tab cleared.")
                     st.session_state.clear()
-                else:
-                    st.error("Failed to clear Google Sheet.")
 
 render_footer()
