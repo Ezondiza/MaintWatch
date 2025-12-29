@@ -81,29 +81,51 @@ with tab2:
         else:
             st.info("No ATA chapters found.")
 
-# --- TAB 3: DUMMY DATA GENERATOR ---
+# --- TAB 3: DUMMY DATA GENERATOR (SMART VERSION) ---
 with tab3:
     st.subheader("Generate & Sync Dummy Data")
-    st.markdown("Generate 50 random rows for the **removal_events** tab.")
+    st.markdown("Generate 50 realistic rows where **Flight Hours increase over time**.")
 
-    if st.button("🔄 Generate 50 Records & Sync to Cloud"):
+    if st.button("🔄 Generate 50 Smart Records"):
         dates = pd.date_range(start="2024-01-01", periods=50)
         
-        # Matches Google Sheet Schema
-        data = {
-            "aircraft_reg": np.random.choice(["9N-AHA", "9N-AHB", "9N-AIC"], 50),
-            "component_code": ["C-123"] * 50,
-            "component_name": np.random.choice(["Main Wheel", "Starter Gen", "Brake Unit", "Fuel Pump"], 50),
-            "part_number": "PN-DEMO-123",
-            "component_type": np.random.choice(["On Condition (OC)", "Life Limited (LL)"], 50),
-            "serial_number": np.random.choice(["SN-001", "SN-002", "SN-003"], 50),
-            "ata_chapter": np.random.choice(["32", "24", "21", "73", "27"], 50),
-            "removal_date": dates,
-            "aircraft_fh": np.random.randint(1000, 5000, 50),
-            "aircraft_fc": np.random.randint(500, 2000, 50),
-            "removal_type": "Unscheduled",
-            "removal_reason": np.random.choice(["Wear", "Leaking", "Vibration", "Electrical Fault"], 50)
-        }
+        # 1. Create Base Arrays
+        data = []
+        
+        # We need to track the "Current FH" for each aircraft so it increases logically
+        # Starting FH for each plane
+        current_fh = {"9N-AHA": 1200, "9N-AHB": 2500, "9N-AIC": 5000}
+        current_fc = {"9N-AHA": 600,  "9N-AHB": 1100, "9N-AIC": 2200}
+
+        for d in dates:
+            # Pick a random aircraft
+            ac = np.random.choice(["9N-AHA", "9N-AHB", "9N-AIC"])
+            
+            # Simulate that the plane flew 4-8 hours since the last entry
+            flight_time = np.random.randint(4, 9) 
+            cycles = np.random.randint(1, 4)
+            
+            # Update the counters
+            current_fh[ac] += flight_time
+            current_fc[ac] += cycles
+            
+            # Build the row
+            row = {
+                "aircraft_reg": ac,
+                "component_code": "C-123",
+                "component_name": np.random.choice(["Main Wheel", "Starter Gen", "Brake Unit", "Fuel Pump"], p=[0.4, 0.2, 0.2, 0.2]),
+                "part_number": "PN-DEMO-123",
+                "component_type": np.random.choice(["On Condition (OC)", "Life Limited (LL)"]),
+                "serial_number": f"SN-{np.random.randint(100,999)}",
+                "ata_chapter": np.random.choice(["32", "24", "21", "73", "27"]),
+                "removal_date": d,
+                "aircraft_fh": current_fh[ac], # Uses the increasing number
+                "aircraft_fc": current_fc[ac],
+                "removal_type": "Unscheduled",
+                "removal_reason": np.random.choice(["Wear", "Leaking", "Vibration", "Electrical Fault"])
+            }
+            data.append(row)
+
         df_demo = pd.DataFrame(data)
         
         with st.spinner("Syncing to Google Sheet..."):
@@ -111,10 +133,9 @@ with tab3:
         
         if success:
             st.session_state["df"] = df_demo
-            st.success("✅ Google Sheet 'removal_events' populated.")
+            st.success("✅ Smart Data Generated! Go to Dashboard to see correct MTBF.")
         else:
             st.error("⚠️ Failed to write to Google Sheet.")
-
 # --- TAB 4: DANGER ZONE ---
 with tab4:
     st.subheader("Database Maintenance")
