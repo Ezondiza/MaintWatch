@@ -11,7 +11,6 @@ SCOPE = [
 def connect_to_sheet(worksheet_name="removal_events"):
     """
     Connects to a specific worksheet in 'MaintWatch_Data'.
-    Default is 'removal_events'.
     """
     try:
         if "gcp_service_account" not in st.secrets:
@@ -24,11 +23,10 @@ def connect_to_sheet(worksheet_name="removal_events"):
         
         sheet_file = client.open("MaintWatch_Data")
         
-        # Try to open the specific worksheet
         try:
             return sheet_file.worksheet(worksheet_name)
         except gspread.WorksheetNotFound:
-            st.error(f"Worksheet '{worksheet_name}' not found. Please create it in Google Sheets.")
+            st.error(f"Worksheet '{worksheet_name}' not found in Google Sheet.")
             return None
             
     except Exception as e:
@@ -38,10 +36,6 @@ def connect_to_sheet(worksheet_name="removal_events"):
 def write_data_to_sheet(data_dict, target_sheet):
     """
     Generic function to append a dictionary row to any sheet.
-    
-    Args:
-        data_dict (dict): The data to save.
-        target_sheet (str): 'aircraft_fleet' or 'ata_chapters' or 'removal_events'
     """
     sheet = connect_to_sheet(target_sheet)
     if not sheet:
@@ -61,12 +55,13 @@ def write_data_to_sheet(data_dict, target_sheet):
             data_dict.get("Description")
         ]
     elif target_sheet == "removal_events":
-        # Your existing logic for removal events
+        # Matches the new schema with Component Type
         row_data = [
             data_dict.get("aircraft_reg"),
             data_dict.get("component_code"),
             data_dict.get("component_name"),
             data_dict.get("part_number"),
+            data_dict.get("component_type"), # New Column
             data_dict.get("serial_number"),
             data_dict.get("ata_chapter"),
             str(data_dict.get("removal_date")),
@@ -85,6 +80,10 @@ def write_data_to_sheet(data_dict, target_sheet):
     except Exception as e:
         st.error(f"Error saving to {target_sheet}: {e}")
         return False
+
+def append_removal_event_gsheet(record):
+    """Wrapper for backward compatibility with older pages."""
+    return write_data_to_sheet(record, "removal_events")
 
 def write_bulk_data(df):
     """
@@ -107,4 +106,27 @@ def write_bulk_data(df):
         return True
     except Exception as e:
         st.error(f"Error writing bulk data: {e}")
+        return False
+
+def clear_worksheet_data(target_sheet="removal_events"):
+    """
+    Clears all data in a worksheet but KEEPS the header row (Row 1).
+    """
+    sheet = connect_to_sheet(target_sheet)
+    if not sheet:
+        return False
+        
+    try:
+        all_values = sheet.get_all_values()
+        row_count = len(all_values)
+        
+        if row_count > 1:
+            range_to_clear = f"A2:M{row_count}"
+            sheet.batch_clear([range_to_clear])
+            return True
+        else:
+            return True
+            
+    except Exception as e:
+        st.error(f"Error clearing sheet: {e}")
         return False
