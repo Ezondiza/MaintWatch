@@ -2,16 +2,59 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 from utils.navbar import create_header
-from utils.gsheet_loader import append_removal_event_gsheet
+from utils.footer import render_footer
+from utils.gsheet_loader import append_removal_event_gsheet, fetch_all_data
 
 # 1. Page Config
 st.set_page_config(page_title="New Removal", layout="wide", initial_sidebar_state="collapsed")
 create_header(current_page="New Entry")
 
 st.title("➕ New Component Removal")
+
+# --- 2. SMART DROPDOWN LOGIC (CACHED) ---
+@st.cache_data(ttl=300) # Cache for 5 minutes automatically
+def load_reference_data():
+    """
+    Fetches Fleet and ATA data from Google Sheets to populate dropdowns.
+    """
+    # Fetch DataFrames
+    df_fleet = fetch_all_data("aircraft_fleet")
+    df_ata = fetch_all_data("ata_chapters")
+    
+    # Process Fleet List
+    if not df_fleet.empty and "Registration" in df_fleet.columns:
+        fleet_list = sorted(df_fleet["Registration"].astype(str).unique().tolist())
+    else:
+        fleet_list = ["9N-AHA", "9N-AHB", "9N-AIC"] # Fallback
+        
+    # Process ATA List (Combine Code + Description)
+    if not df_ata.empty and "Chapter" in df_ata.columns:
+        # If description exists, combine them: "32 | Landing Gear"
+        if "Description" in df_ata.columns:
+            # Helper to format
+            def fmt_ata(row):
+                return f"{row['Chapter']} | {row['Description']}"
+            ata_list = sorted(df_ata.apply(fmt_ata, axis=1).tolist())
+        else:
+            ata_list = sorted(df_ata["Chapter"].astype(str).unique().tolist())
+    else:
+        ata_list = ["21 | Air Conditioning", "32 | Landing Gear", "73 | Engine Fuel"] # Fallback
+
+    return fleet_list, ata_list
+
+# Refresh Button (To clear cache if you just added a new plane)
+col_title, col_refresh = st.columns([4, 1])
+with col_refresh:
+    if st.button("🔄 Refresh Lists"):
+        load_reference_data.clear() # Clears the cache
+        st.toast("Reference lists refreshed from Cloud!", icon="☁️")
+
+# Load the data
+aircraft_options, ata_options = load_reference_data()
+
+# --- 3. THE FORM ---
 st.markdown("Record an unscheduled component removal event.")
 
-# 2. Form Interface
 with st.form("removal_entry_form"):
     st.subheader("Event Details")
     
@@ -19,9 +62,13 @@ with st.form("removal_entry_form"):
     with c1:
         event_date = st.date_input("Date of Removal", value=date.today())
     with c2:
-        aircraft_reg = st.text_input("Aircraft Registration", placeholder="e.g., 9N-AHA") 
+        # SMART DROPDOWN: Aircraft
+        aircraft_reg = st.selectbox("Aircraft Registration", options=aircraft_options) 
     with c3:
-        ata_chapter = st.text_input("ATA Chapter", placeholder="e.g., 32")
+        # SMART DROPDOWN: ATA Chapter
+        ata_selection = st.selectbox("ATA Chapter", options=ata_options)
+        # Extract just the number (e.g. "32") for saving
+        ata_chapter = ata_selection.split(" | ")[0] if "|" in ata_selection else ata_selection
 
     st.subheader("Component Details")
     c4, c5 = st.columns(2)
@@ -30,7 +77,7 @@ with st.form("removal_entry_form"):
     with c5:
         part_number = st.text_input("Part Number (P/N)")
 
-    # Component Type Selection
+    # Component Type
     st.markdown("##### Component Life Type")
     comp_type = st.radio(
         "Select Type:",
@@ -46,13 +93,11 @@ with st.form("removal_entry_form"):
 
     st.subheader("Maintenance Data")
     
-    # --- MISSING FIELDS ADDED HERE ---
     m1, m2 = st.columns(2)
     with m1:
         aircraft_fh = st.number_input("Aircraft FH (at removal)", min_value=0.0, step=0.1, format="%.1f")
     with m2:
         aircraft_fc = st.number_input("Aircraft FC (at removal)", min_value=0, step=1)
-    # ---------------------------------
 
     removal_reason = st.text_area("Reason for Removal / Defect Description")
     
@@ -62,7 +107,7 @@ with st.form("removal_entry_form"):
     with c9:
         pilot_name = st.text_input("Pilot Name")
 
-    # 3. Form Submission Logic
+    # 4. Form Submission Logic
     submitted = st.form_submit_button("💾 Save Removal Event", type="primary")
 
     if submitted:
@@ -77,10 +122,10 @@ with st.form("removal_entry_form"):
                 "part_number": part_number,
                 "component_type": comp_type,
                 "serial_number": serial_off,
-                "ata_chapter": ata_chapter,
+                "ata_chapter": ata_chapter, # We save just the code "32"
                 "removal_date": pd.to_datetime(event_date),
-                "aircraft_fh": aircraft_fh,  # Now included
-                "aircraft_fc": aircraft_fc,  # Now included
+                "aircraft_fh": aircraft_fh,
+                "aircraft_fc": aircraft_fc,
                 "removal_type": "Unscheduled",
                 "removal_reason": removal_reason
             }
@@ -88,5 +133,7 @@ with st.form("removal_entry_form"):
             # Save to Google Sheet
             with st.spinner("Saving to Cloud Database..."):
                 if append_removal_event_gsheet(new_entry):
-                    st.success(f"✅ Event recorded for {comp_name} ({comp_type})")
+                    st.success(f"✅ Event recorded for {comp_name} on {aircraft_reg}")
                     st.balloons()
+
+render_footer()
